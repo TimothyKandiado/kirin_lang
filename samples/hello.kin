@@ -1,0 +1,9 @@
+package main
+
+native fn print(args: any): void
+
+fn main(): void {
+    x : i64 = 800
+
+    print(x)
+}
