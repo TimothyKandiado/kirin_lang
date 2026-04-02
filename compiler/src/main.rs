@@ -5,9 +5,7 @@ fn main() {
 
     let results = parse_tokens(&source);
 
-    if results.is_err() {
-        let errors = results.unwrap_err();
-
+    if let Err(errors) = results {
         for error in errors {
             println!("{}", error);
         }
@@ -23,9 +21,7 @@ fn main() {
 
     let ast_result = parse_ast(tokens);
 
-    if ast_result.is_err() {
-        let errors = ast_result.unwrap_err();
-
+    if let Err(errors) = ast_result {
         for error in errors {
             println!(
                 "[Error][line: {}, column: {}] '{}'",
