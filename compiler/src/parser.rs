@@ -251,7 +251,7 @@ pub fn parse_ast(tokens: Vec<Token<'_>>) -> Result<Vec<Statement<'_>>, Vec<Parse
         errors: Vec::new(),
     };
 
-    return parser.parse_statements();
+    parser.parse_statements()
 }
 
 #[derive(Debug, Clone)]
@@ -282,11 +282,11 @@ impl<'a> Parser<'a> {
             }
         }
 
-        if self.errors.len() > 0 {
+        if !self.errors.is_empty() {
             return Err(self.errors);
         }
 
-        return Ok(self.statements);
+        Ok(self.statements)
     }
 
     fn synchronize(&mut self) {
@@ -318,7 +318,7 @@ impl<'a> Parser<'a> {
             return self.var_decl();
         }
 
-        return self.statement();
+        self.statement()
     }
 
     fn parse_modifiers(&mut self) -> Vec<TokenKind> {
@@ -338,7 +338,7 @@ impl<'a> Parser<'a> {
             _ = self.advance();
         }
 
-        return modifiers;
+        modifiers
     }
 
     fn package_decl(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -349,11 +349,11 @@ impl<'a> Parser<'a> {
             "expected new line after package name".to_string(),
         )?;
 
-        return Ok(Statement::PackageDecl(PackageDeclstmt {
+        Ok(Statement::PackageDecl(PackageDeclstmt {
             name: name.lexeme,
             line: name.line,
             column: name.column,
-        }));
+        }))
     }
 
     fn var_decl(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -385,7 +385,7 @@ impl<'a> Parser<'a> {
             value_type: var_type,
         };
 
-        return Ok(Statement::VarDecl(var_decl));
+        Ok(Statement::VarDecl(var_decl))
     }
 
     fn func_decl(&mut self, modifiers: Vec<TokenKind>) -> Result<Statement<'a>, ParseError> {
@@ -456,9 +456,9 @@ impl<'a> Parser<'a> {
             return_type,
         };
 
-        return Ok(Statement::FunctionDecl(Box::new(
+        Ok(Statement::FunctionDecl(Box::new(
             FunctionDeclStmt::UserFunc(user_defined_func),
-        )));
+        )))
     }
 
     fn statement(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -470,7 +470,7 @@ impl<'a> Parser<'a> {
             return self.block_stmt();
         }
 
-        return self.expression_stmt();
+        self.expression_stmt()
     }
 
     fn if_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -495,7 +495,7 @@ impl<'a> Parser<'a> {
             else_branch,
         };
 
-        return Ok(Statement::If(Box::new(if_stmt)));
+        Ok(Statement::If(Box::new(if_stmt)))
     }
 
     fn block_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -522,7 +522,7 @@ impl<'a> Parser<'a> {
             statements,
         };
 
-        return Ok(Statement::Block(block_stmt));
+        Ok(Statement::Block(block_stmt))
     }
 
     fn expression_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -533,7 +533,7 @@ impl<'a> Parser<'a> {
             "expected newline after expression".to_string(),
         )?;
 
-        return Ok(Statement::Expr(expr));
+        Ok(Statement::Expr(expr))
     }
 
     fn parse_type(&mut self) -> Result<ValueType, ParseError> {
@@ -556,7 +556,7 @@ impl<'a> Parser<'a> {
     }
 
     fn expression(&mut self) -> Result<Expression<'a>, ParseError> {
-        return self.assignment();
+        self.assignment()
     }
 
     fn assignment(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -588,7 +588,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn or_expr(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -612,7 +612,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn and_expr(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -636,7 +636,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -660,7 +660,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn comparison(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -690,7 +690,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn addition(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -714,7 +714,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn multiplication(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -738,7 +738,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn power(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -762,7 +762,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn unary(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -777,13 +777,13 @@ impl<'a> Parser<'a> {
                 column: prev.column,
                 op: UnaryExprOp::Neg,
                 value: right,
-                value_type: value_type,
+                value_type,
             };
 
             return Ok(Expression::Unary(Box::new(unary_expr)));
         }
 
-        return self.call();
+        self.call()
     }
 
     fn call(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -820,7 +820,7 @@ impl<'a> Parser<'a> {
             return Ok(Expression::Call(Box::new(call_expr)));
         }
 
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn primary(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -888,7 +888,7 @@ impl<'a> Parser<'a> {
                     line: token.line,
                     column: token.column,
                     expression: expr,
-                    value_type: value_type,
+                    value_type,
                 };
 
                 Ok(Expression::Grouping(Box::new(grouping_expr)))
@@ -916,11 +916,11 @@ impl<'a> Parser<'a> {
         }
 
         let current = self.peek();
-        return Err(ParseError {
+        Err(ParseError {
             line: current.line,
             column: current.column,
             context: error_message,
-        });
+        })
     }
 
     fn match_tokens(&mut self, kinds: &[TokenKind]) -> bool {
@@ -931,15 +931,15 @@ impl<'a> Parser<'a> {
             }
         }
 
-        return false;
+        false
     }
 
     fn check(&self, kind: TokenKind) -> bool {
-        return self.peek().kind == kind;
+        self.peek().kind == kind
     }
 
     fn check_next(&self, kind: TokenKind) -> bool {
-        return self.peek_next().kind == kind;
+        self.peek_next().kind == kind
     }
 
     fn previous(&self) -> Token<'a> {
@@ -947,7 +947,7 @@ impl<'a> Parser<'a> {
             return Token::none();
         }
 
-        return self.tokens[self.current - 1].clone();
+        self.tokens[self.current - 1].clone()
     }
 
     fn peek(&self) -> Token<'a> {
@@ -955,7 +955,7 @@ impl<'a> Parser<'a> {
             return Token::none();
         }
 
-        return self.tokens[self.current].clone();
+        self.tokens[self.current].clone()
     }
 
     fn peek_next(&self) -> Token<'a> {
@@ -963,7 +963,7 @@ impl<'a> Parser<'a> {
             return Token::none();
         }
 
-        return self.tokens[self.current + 1].clone();
+        self.tokens[self.current + 1].clone()
     }
 
     fn advance(&mut self) -> Token<'a> {
@@ -972,7 +972,7 @@ impl<'a> Parser<'a> {
         }
 
         self.current += 1;
-        return self.tokens[self.current - 1].clone();
+        self.tokens[self.current - 1].clone()
     }
 
     fn is_at_end(&self) -> bool {
@@ -980,6 +980,6 @@ impl<'a> Parser<'a> {
             return true;
         }
 
-        return self.tokens[self.current].kind == TokenKind::Eof;
+        self.tokens[self.current].kind == TokenKind::Eof
     }
 }

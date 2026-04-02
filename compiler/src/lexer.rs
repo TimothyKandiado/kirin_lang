@@ -81,12 +81,12 @@ pub struct Token<'a> {
 
 impl Token<'_> {
     pub fn none() -> Self {
-        return Token {
+        Token {
             kind: TokenKind::None,
             lexeme: "",
             line: 0,
             column: 0,
-        };
+        }
     }
 }
 
@@ -118,7 +118,7 @@ pub fn parse_tokens(source: &str) -> Result<Vec<Token<'_>>, Vec<ScanError>> {
         tokens: Vec::new(),
     };
 
-    return parser.scan_tokens();
+    parser.scan_tokens()
 }
 
 struct Parser<'a> {
@@ -137,13 +137,13 @@ impl<'a> Parser<'a> {
             self.scan_token();
         }
 
-        if self.errors.len() > 0 {
+        if !self.errors.is_empty() {
             return Err(self.errors);
         }
 
         self.emit_current_simple_token(TokenKind::Eof);
 
-        return Ok(self.tokens);
+        Ok(self.tokens)
     }
 
     fn scan_token(&mut self) {
@@ -328,7 +328,7 @@ impl<'a> Parser<'a> {
     fn emit_token(&mut self, kind: TokenKind, lexeme: &'a str, line: usize, column: usize) {
         let token = Token {
             kind,
-            lexeme: lexeme,
+            lexeme,
             line,
             column,
         };
@@ -360,7 +360,7 @@ impl<'a> Parser<'a> {
         }
 
         _ = self.advance();
-        return true;
+        true
     }
 
     pub fn peek(&self) -> char {
@@ -368,7 +368,7 @@ impl<'a> Parser<'a> {
             return '\0';
         }
 
-        return self.source.chars().nth(self.current).unwrap();
+        self.source.chars().nth(self.current).unwrap()
     }
 
     pub fn peek_next(&self) -> char {
@@ -376,7 +376,7 @@ impl<'a> Parser<'a> {
             return '\0';
         }
 
-        return self.source.chars().nth(self.current + 1).unwrap();
+        self.source.chars().nth(self.current + 1).unwrap()
     }
 
     pub fn advance(&mut self) -> char {
@@ -387,7 +387,7 @@ impl<'a> Parser<'a> {
         self.current += 1;
         self.column += 1;
 
-        return self.source.chars().nth(self.current - 1).unwrap();
+        self.source.chars().nth(self.current - 1).unwrap()
     }
 
     pub fn is_at_end(&self) -> bool {
