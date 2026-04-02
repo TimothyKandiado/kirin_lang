@@ -1,8 +1,9 @@
 use std::fmt;
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum TokenKind {
+    None,
     // Literals
     NumberLiteral,
     StringLiteral,
@@ -39,6 +40,9 @@ pub enum TokenKind {
     EqualEqual,
     NotEqual,
 
+    And,
+    Or,
+
     // Keywords
     Fn,
     Return,
@@ -59,9 +63,10 @@ pub enum TokenKind {
     SquareLeft,
     SquareRight,
 
-    // 
+    // Delimiters
     NewLine,
     Colon,
+    Comma,
     
     Eof
 }
@@ -72,6 +77,12 @@ pub struct Token<'a> {
     pub lexeme: &'a str,
     pub line: usize,
     pub column: usize
+}
+
+impl Token<'_> {
+    pub fn none() -> Self {
+        return Token {kind: TokenKind::None, lexeme: "", line: 0, column: 0};
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -214,6 +225,7 @@ impl<'a> Parser<'a> {
                 self.emit_current_simple_token(TokenKind::SquareRight);
             },
             ':' => self.emit_current_simple_token(TokenKind::Colon),
+            ',' => self.emit_current_simple_token(TokenKind::Comma),
             
             x if x.is_ascii_digit() => self.scan_number(),
 
@@ -260,6 +272,9 @@ impl<'a> Parser<'a> {
             "for" => self.emit_token(TokenKind::For, "", line, column),
             "i64" => self.emit_token(TokenKind::I64, "", line, column),
             "f64" => self.emit_token(TokenKind::F64, "", line, column),
+            "void" => self.emit_token(TokenKind::Void, "", line, column),
+            "any" => self.emit_token(TokenKind::Any, "", line, column),
+            "string" => self.emit_token(TokenKind::Str, "", line, column),
             "bool" => self.emit_token(TokenKind::Bool, "", line, column),
             "true" => self.emit_token(TokenKind::True, "", line, column),
             "false" => self.emit_token(TokenKind::False, "", line, column),
