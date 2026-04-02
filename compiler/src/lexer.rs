@@ -67,9 +67,9 @@ pub enum TokenKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct Token {
+pub struct Token<'a> {
     pub kind: TokenKind,
-    pub lexeme: String,
+    pub lexeme: &'a str,
     pub line: usize,
     pub column: usize
 }
@@ -94,7 +94,7 @@ impl fmt::Display for ScanError {
 }
 
 
-pub fn parse_tokens(source: &str) -> Result<Vec<Token>, Vec<ScanError>> {
+pub fn parse_tokens(source: &str) -> Result<Vec<Token<'_>>, Vec<ScanError>> {
     let parser = Parser {
         current: 0,
         column: 0,
@@ -115,11 +115,11 @@ struct Parser<'a> {
     line: usize,
     column: usize,
     errors: Vec<ScanError>,
-    tokens: Vec<Token>
+    tokens: Vec<Token<'a>>
 }
 
-impl Parser<'_> {
-    pub fn scan_tokens(mut self) -> Result<Vec<Token>, Vec<ScanError>> {
+impl<'a> Parser<'a> {
+    pub fn scan_tokens(mut self) -> Result<Vec<Token<'a>>, Vec<ScanError>> {
         while !self.is_at_end() {
             self.scan_token();
         }
@@ -240,7 +240,7 @@ impl Parser<'_> {
             }
         }
 
-        let segment = &self.source[self.start..self.current].to_string();
+        let segment = &self.source[self.start..self.current];
 
         self.emit_token(TokenKind::NumberLiteral, segment, line, column);
     }
@@ -309,10 +309,10 @@ impl Parser<'_> {
         }
     }
 
-    fn emit_token(&mut self, kind: TokenKind, lexeme: &str, line: usize, column: usize) {
+    fn emit_token(&mut self, kind: TokenKind, lexeme: &'a str, line: usize, column: usize) {
         let token = Token {
             kind,
-            lexeme: String::from(lexeme),
+            lexeme: lexeme,
             line,
             column
         };
