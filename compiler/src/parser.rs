@@ -1,39 +1,39 @@
 use crate::lexer::{Token, TokenKind};
 
 #[derive(Debug, Clone)]
-pub enum Expression<'a>  {
+pub enum Expression<'a> {
     None,
     Binary(Box<BinaryExpr<'a>>),
     Unary(Box<UnaryExpr<'a>>),
-    Literal(LiteralExpr<'a> ),
-    Grouping(Box<GroupingExpr<'a> >),
-    Call(Box<CallExpr<'a> >),
-    Assign(Box<AssignExpr<'a> >),
-    Variable(VariableExpr<'a>)
+    Literal(LiteralExpr<'a>),
+    Grouping(Box<GroupingExpr<'a>>),
+    Call(Box<CallExpr<'a>>),
+    Assign(Box<AssignExpr<'a>>),
+    Variable(VariableExpr<'a>),
 }
 
 impl Expression<'_> {
     pub fn get_value_type(&self) -> ValueType {
-        match (self) {
-            Self::Assign(assign) => ValueType::Void,
+        match self {
+            Self::Assign(_) => ValueType::Void,
             Self::Binary(bin) => bin.value_type,
             Self::Unary(un) => un.value_type,
             Self::Literal(lit) => lit.value_type,
             Self::Grouping(group) => group.value_type,
             Self::Call(call) => call.value_type,
             Self::Variable(var) => var.value_type,
-            Self::None => ValueType::Undefined
+            Self::None => ValueType::Undefined,
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct BinaryExpr<'a>  {
+pub struct BinaryExpr<'a> {
     pub line: usize,
     pub column: usize,
     pub op: BinaryExprOp,
-    pub left: Expression<'a> ,
-    pub right: Expression<'a> ,
+    pub left: Expression<'a>,
+    pub right: Expression<'a>,
     pub value_type: ValueType,
 }
 
@@ -77,18 +77,21 @@ impl BinaryExprOp {
             TokenKind::Or => Ok(BinaryExprOp::Or),
             TokenKind::And => Ok(BinaryExprOp::And),
 
-            _ => Err(ParseError { line: token.line, column: token.column, context: format!("token {:?} is not a valid binary operator", token.kind) })
+            _ => Err(ParseError {
+                line: token.line,
+                column: token.column,
+                context: format!("token {:?} is not a valid binary operator", token.kind),
+            }),
         }
     }
 }
 
-
 #[derive(Debug, Clone)]
-pub struct UnaryExpr<'a>  {
+pub struct UnaryExpr<'a> {
     pub line: usize,
     pub column: usize,
     pub op: UnaryExprOp,
-    pub value: Expression<'a> ,
+    pub value: Expression<'a>,
     pub value_type: ValueType,
 }
 
@@ -104,7 +107,7 @@ pub struct CallExpr<'a> {
     pub column: usize,
     pub callee: Expression<'a>,
     pub arguments: Vec<Expression<'a>>,
-    pub value_type: ValueType
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
@@ -112,23 +115,23 @@ pub struct AssignExpr<'a> {
     pub name: &'a str,
     pub value: Expression<'a>,
     pub line: usize,
-    pub column: usize
+    pub column: usize,
 }
 
 #[derive(Debug, Clone)]
-pub struct GroupingExpr<'a>  {
+pub struct GroupingExpr<'a> {
     pub line: usize,
     pub column: usize,
-    pub expression: Expression<'a> ,
-    pub value_type: ValueType
+    pub expression: Expression<'a>,
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
-pub struct LiteralExpr<'a>  {
+pub struct LiteralExpr<'a> {
     pub line: usize,
     pub column: usize,
-    pub value: LiteralValue<'a> ,
-    pub value_type: ValueType
+    pub value: LiteralValue<'a>,
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
@@ -136,7 +139,7 @@ pub struct VariableExpr<'a> {
     pub line: usize,
     pub column: usize,
     pub name: &'a str,
-    pub value_type: ValueType
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -159,19 +162,19 @@ pub enum ValueType {
 }
 
 #[derive(Debug, Clone)]
-pub enum Statement<'a>  {
+pub enum Statement<'a> {
     None,
-    PackageDecl(PackageDeclstmt<'a> ),
-    FunctionDecl(Box<FunctionDeclStmt<'a> >),
-    If(Box<IfStmt<'a> >),
-    Block(BlockStmt<'a> ),
-    Return(ReturnStmt<'a> ),
-    VarDecl(VarDeclStmt<'a> ),
-    Expr(Expression<'a> )
+    PackageDecl(PackageDeclstmt<'a>),
+    FunctionDecl(Box<FunctionDeclStmt<'a>>),
+    If(Box<IfStmt<'a>>),
+    Block(BlockStmt<'a>),
+    Return(ReturnStmt<'a>),
+    VarDecl(VarDeclStmt<'a>),
+    Expr(Expression<'a>),
 }
 
 #[derive(Debug, Clone)]
-pub struct VarDeclStmt<'a>  {
+pub struct VarDeclStmt<'a> {
     pub name: &'a str,
     pub value: Option<Expression<'a>>,
     pub line: usize,
@@ -180,13 +183,13 @@ pub struct VarDeclStmt<'a>  {
 }
 
 #[derive(Debug, Clone)]
-pub enum FunctionDeclStmt<'a>  {
-    Native(NativeFuncDecl<'a> ),
-    UserFunc(UserFuncDecl<'a> ),
+pub enum FunctionDeclStmt<'a> {
+    Native(NativeFuncDecl<'a>),
+    UserFunc(UserFuncDecl<'a>),
 }
 
 #[derive(Debug, Clone)]
-pub struct NativeFuncDecl<'a>  {
+pub struct NativeFuncDecl<'a> {
     pub name: &'a str,
     pub params: Vec<FuncParam<'a>>,
     pub line: usize,
@@ -195,7 +198,7 @@ pub struct NativeFuncDecl<'a>  {
 }
 
 #[derive(Debug, Clone)]
-pub struct UserFuncDecl<'a>  {
+pub struct UserFuncDecl<'a> {
     pub name: &'a str,
     pub params: Vec<FuncParam<'a>>,
     pub body: Statement<'a>,
@@ -211,31 +214,31 @@ pub struct FuncParam<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct IfStmt<'a>  {
-    pub condition: Expression<'a> ,
-    pub then_branch: Statement<'a> ,
+pub struct IfStmt<'a> {
+    pub condition: Expression<'a>,
+    pub then_branch: Statement<'a>,
     pub else_branch: Option<Statement<'a>>,
     pub line: usize,
     pub column: usize,
 }
 
 #[derive(Debug, Clone)]
-pub struct PackageDeclstmt<'a>  {
+pub struct PackageDeclstmt<'a> {
     pub name: &'a str,
-    pub line: usize,
-    pub column: usize
-}
-
-#[derive(Debug, Clone)]
-pub struct BlockStmt<'a>  {
-    pub statements: Vec<Statement<'a> >,
     pub line: usize,
     pub column: usize,
 }
 
 #[derive(Debug, Clone)]
-pub struct ReturnStmt<'a>  {
-    pub value: Option<Expression<'a> >,
+pub struct BlockStmt<'a> {
+    pub statements: Vec<Statement<'a>>,
+    pub line: usize,
+    pub column: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReturnStmt<'a> {
+    pub value: Option<Expression<'a>>,
     pub line: usize,
     pub column: usize,
 }
@@ -245,9 +248,9 @@ pub fn parse_ast(tokens: Vec<Token<'_>>) -> Result<Vec<Statement<'_>>, Vec<Parse
         tokens,
         current: 0,
         statements: Vec::new(),
-        errors: Vec::new()
+        errors: Vec::new(),
     };
-    
+
     return parser.parse_statements();
 }
 
@@ -258,14 +261,14 @@ pub struct ParseError {
     pub context: String,
 }
 
-struct Parser<'a>  {
+struct Parser<'a> {
     pub tokens: Vec<Token<'a>>,
     pub current: usize,
     pub statements: Vec<Statement<'a>>,
-    pub errors: Vec<ParseError>
+    pub errors: Vec<ParseError>,
 }
 
-impl<'a>  Parser<'a> {
+impl<'a> Parser<'a> {
     pub fn parse_statements(mut self) -> Result<Vec<Statement<'a>>, Vec<ParseError>> {
         while !self.is_at_end() {
             let statement = self.declaration();
@@ -280,10 +283,10 @@ impl<'a>  Parser<'a> {
         }
 
         if self.errors.len() > 0 {
-            return Err(self.errors)
+            return Err(self.errors);
         }
 
-        return Ok(self.statements)
+        return Ok(self.statements);
     }
 
     fn synchronize(&mut self) {
@@ -309,13 +312,9 @@ impl<'a>  Parser<'a> {
 
         if self.match_tokens(&[TokenKind::Package]) {
             return self.package_decl();
-        }
-
-        else if self.match_tokens(&[TokenKind::Fn]) {
+        } else if self.match_tokens(&[TokenKind::Fn]) {
             return self.func_decl(modifiers);
-        }
-
-        else if self.check(TokenKind::Identifier) && self.check_next(TokenKind::Colon) {
+        } else if self.check(TokenKind::Identifier) && self.check_next(TokenKind::Colon) {
             return self.var_decl();
         }
 
@@ -331,9 +330,9 @@ impl<'a>  Parser<'a> {
             match current.kind {
                 TokenKind::Pub | TokenKind::Native => {
                     modifiers.push(current.kind);
-                },
+                }
 
-                _ => break
+                _ => break,
             }
 
             _ = self.advance();
@@ -345,62 +344,88 @@ impl<'a>  Parser<'a> {
     fn package_decl(&mut self) -> Result<Statement<'a>, ParseError> {
         let name = self.consume(TokenKind::Identifier, "expected package name".to_string())?;
 
-        _ = self.consume(TokenKind::NewLine, "expected new line after package name".to_string())?;
+        _ = self.consume(
+            TokenKind::NewLine,
+            "expected new line after package name".to_string(),
+        )?;
 
-        return Ok(Statement::PackageDecl(PackageDeclstmt { name: name.lexeme, line: name.line, column: name.column }))
+        return Ok(Statement::PackageDecl(PackageDeclstmt {
+            name: name.lexeme,
+            line: name.line,
+            column: name.column,
+        }));
     }
 
     fn var_decl(&mut self) -> Result<Statement<'a>, ParseError> {
         let name = self.consume(TokenKind::Identifier, "expected variable name".to_string())?;
-        _ = self.consume(TokenKind::Colon, "expect ':' after variable name".to_string())?;
+        _ = self.consume(
+            TokenKind::Colon,
+            "expect ':' after variable name".to_string(),
+        )?;
 
         let var_type = self.parse_type()?;
 
-        _ = self.consume(TokenKind::Equal, "expected '=' after variable type".to_string())?;
+        _ = self.consume(
+            TokenKind::Equal,
+            "expected '=' after variable type".to_string(),
+        )?;
 
         let value = self.expression()?;
 
-        _ = self.consume(TokenKind::NewLine, "expected new line after var declaration".to_string())?;
+        _ = self.consume(
+            TokenKind::NewLine,
+            "expected new line after var declaration".to_string(),
+        )?;
 
         let var_decl = VarDeclStmt {
             name: name.lexeme,
             value: Some(value),
             line: name.line,
             column: name.line,
-            value_type: var_type
+            value_type: var_type,
         };
 
-        return Ok(Statement::VarDecl(var_decl))
+        return Ok(Statement::VarDecl(var_decl));
     }
 
     fn func_decl(&mut self, modifiers: Vec<TokenKind>) -> Result<Statement<'a>, ParseError> {
         let name = self.consume(TokenKind::Identifier, "expected function name".to_string())?;
-        _ = self.consume(TokenKind::ParenLeft, "expected '(' after function name".to_string())?;
+        _ = self.consume(
+            TokenKind::ParenLeft,
+            "expected '(' after function name".to_string(),
+        )?;
 
         let mut parameters = Vec::new();
 
         if !self.check(TokenKind::ParenRight) {
             while !self.is_at_end() {
-                let param_name = self.consume(TokenKind::Identifier, "expected parameter name".to_string())?;
+                let param_name =
+                    self.consume(TokenKind::Identifier, "expected parameter name".to_string())?;
 
-                _ = self.consume(TokenKind::Colon, "expected ':' after parameter name".to_string())?;
+                _ = self.consume(
+                    TokenKind::Colon,
+                    "expected ':' after parameter name".to_string(),
+                )?;
 
                 let param_type = self.parse_type()?;
 
                 let param = FuncParam {
                     name: param_name.lexeme,
-                    value_type: param_type
+                    value_type: param_type,
                 };
 
                 parameters.push(param);
 
                 if !self.match_tokens(&[TokenKind::Comma]) {
-                    break
+                    break;
                 }
             }
         }
 
-        _ = self.consume(TokenKind::ParenRight, "expected ')' after function parameters".to_string())?;
+        _ = self.consume(
+            TokenKind::ParenRight,
+            "expected ')' after function parameters".to_string(),
+        )?;
         _ = self.consume(TokenKind::Colon, "expected ':' after ')'".to_string())?;
 
         let return_type = self.parse_type()?;
@@ -415,22 +440,25 @@ impl<'a>  Parser<'a> {
                 return_type,
             };
 
-            return Ok(Statement::FunctionDecl(Box::new(FunctionDeclStmt::Native(native_func))))
+            return Ok(Statement::FunctionDecl(Box::new(FunctionDeclStmt::Native(
+                native_func,
+            ))));
         }
 
         let body = self.statement()?;
 
         let user_defined_func = UserFuncDecl {
             name: name.lexeme,
-                line: name.line,
-                column: name.column,
-                params: parameters,
-                body,
-                return_type,
+            line: name.line,
+            column: name.column,
+            params: parameters,
+            body,
+            return_type,
         };
 
-        return Ok(Statement::FunctionDecl(Box::new(FunctionDeclStmt::UserFunc(user_defined_func))))
-
+        return Ok(Statement::FunctionDecl(Box::new(
+            FunctionDeclStmt::UserFunc(user_defined_func),
+        )));
     }
 
     fn statement(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -442,7 +470,7 @@ impl<'a>  Parser<'a> {
             return self.block_stmt();
         }
 
-        return self.expression_stmt()
+        return self.expression_stmt();
     }
 
     fn if_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -464,10 +492,10 @@ impl<'a>  Parser<'a> {
             column: prev.column,
             condition,
             then_branch,
-            else_branch
+            else_branch,
         };
 
-        return Ok(Statement::If(Box::new(if_stmt)))
+        return Ok(Statement::If(Box::new(if_stmt)));
     }
 
     fn block_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -482,13 +510,16 @@ impl<'a>  Parser<'a> {
             statements.push(statement);
         }
 
-        _ = self.consume(TokenKind::BraceRight, "expected '}' after end of block".to_string())?;
+        _ = self.consume(
+            TokenKind::BraceRight,
+            "expected '}' after end of block".to_string(),
+        )?;
         self.skip(TokenKind::NewLine);
 
         let block_stmt = BlockStmt {
             line: prev.line,
             column: prev.column,
-            statements
+            statements,
         };
 
         return Ok(Statement::Block(block_stmt));
@@ -497,9 +528,12 @@ impl<'a>  Parser<'a> {
     fn expression_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
         let expr = self.expression()?;
 
-        _ = self.consume(TokenKind::NewLine, "expected newline after expression".to_string())?;
+        _ = self.consume(
+            TokenKind::NewLine,
+            "expected newline after expression".to_string(),
+        )?;
 
-        return Ok(Statement::Expr(expr))
+        return Ok(Statement::Expr(expr));
     }
 
     fn parse_type(&mut self) -> Result<ValueType, ParseError> {
@@ -513,7 +547,11 @@ impl<'a>  Parser<'a> {
             TokenKind::Str => Ok(ValueType::String),
             TokenKind::Any => Ok(ValueType::Any),
 
-            _ => Err(ParseError { line: token.line, column: token.column, context: format!("'{:?}' is not a valid type", token.kind) })
+            _ => Err(ParseError {
+                line: token.line,
+                column: token.column,
+                context: format!("'{:?}' is not a valid type", token.kind),
+            }),
         }
     }
 
@@ -537,11 +575,15 @@ impl<'a>  Parser<'a> {
                         value,
                     };
 
-                    return Ok(Expression::Assign(Box::new(assign_expr)))
-                },
+                    return Ok(Expression::Assign(Box::new(assign_expr)));
+                }
 
                 _ => {
-                    return Err(ParseError { line: prev.line, column: prev.column, context: format!("invalid assignment target {:?}", expr) })
+                    return Err(ParseError {
+                        line: prev.line,
+                        column: prev.column,
+                        context: format!("invalid assignment target {:?}", expr),
+                    });
                 }
             }
         }
@@ -564,13 +606,13 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn and_expr(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -588,13 +630,13 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn equality(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -612,19 +654,25 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn comparison(&mut self) -> Result<Expression<'a>, ParseError> {
         let expr = self.addition()?;
 
-        if self.match_tokens(&[TokenKind::Less, TokenKind::LessEqual, TokenKind::Greater, TokenKind::GreaterEqual, TokenKind::EqualEqual]) {
+        if self.match_tokens(&[
+            TokenKind::Less,
+            TokenKind::LessEqual,
+            TokenKind::Greater,
+            TokenKind::GreaterEqual,
+            TokenKind::EqualEqual,
+        ]) {
             let prev = self.previous();
 
             let op = BinaryExprOp::from_token(&prev)?;
@@ -636,13 +684,13 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn addition(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -660,13 +708,13 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn multiplication(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -684,13 +732,13 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn power(&mut self) -> Result<Expression<'a>, ParseError> {
@@ -708,19 +756,19 @@ impl<'a>  Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined
+                value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Binary(Box::new(binary_expr)))
+            return Ok(Expression::Binary(Box::new(binary_expr)));
         }
 
-        return Ok(expr)
+        return Ok(expr);
     }
 
     fn unary(&mut self) -> Result<Expression<'a>, ParseError> {
         if self.match_tokens(&[TokenKind::Minus]) {
             let prev = self.previous();
-            
+
             let right = self.unary()?;
             let value_type = right.get_value_type();
 
@@ -729,7 +777,7 @@ impl<'a>  Parser<'a> {
                 column: prev.column,
                 op: UnaryExprOp::Neg,
                 value: right,
-                value_type: value_type
+                value_type: value_type,
             };
 
             return Ok(Expression::Unary(Box::new(unary_expr)));
@@ -756,7 +804,10 @@ impl<'a>  Parser<'a> {
                 }
             }
 
-            _ = self.consume(TokenKind::ParenRight, "expected ')' after call arguments".to_string())?;
+            _ = self.consume(
+                TokenKind::ParenRight,
+                "expected ')' after call arguments".to_string(),
+            )?;
 
             let call_expr = CallExpr {
                 line: prev.line,
@@ -766,7 +817,7 @@ impl<'a>  Parser<'a> {
                 value_type: ValueType::Undefined,
             };
 
-            return Ok(Expression::Call(Box::new(call_expr)))
+            return Ok(Expression::Call(Box::new(call_expr)));
         }
 
         return Ok(expr);
@@ -781,11 +832,11 @@ impl<'a>  Parser<'a> {
                     name: token.lexeme,
                     line: token.line,
                     column: token.column,
-                    value_type: ValueType::Undefined
+                    value_type: ValueType::Undefined,
                 };
 
                 Ok(Expression::Variable(var_expr))
-            },
+            }
 
             TokenKind::StringLiteral => {
                 let literal_expr = LiteralExpr {
@@ -796,7 +847,7 @@ impl<'a>  Parser<'a> {
                 };
 
                 Ok(Expression::Literal(literal_expr))
-            },
+            }
 
             TokenKind::NumberLiteral => {
                 let number_result = token.lexeme.parse::<f64>();
@@ -811,33 +862,43 @@ impl<'a>  Parser<'a> {
                         };
 
                         Ok(Expression::Literal(literal_expr))
-                    },
-
-                    Err(err) => {
-                        Err(ParseError { line: token.line, column: token.column, context: format!("'{}' is not a valid number format: {:?}", token.lexeme, err) })
                     }
+
+                    Err(err) => Err(ParseError {
+                        line: token.line,
+                        column: token.column,
+                        context: format!(
+                            "'{}' is not a valid number format: {:?}",
+                            token.lexeme, err
+                        ),
+                    }),
                 }
-            },
+            }
 
             TokenKind::ParenLeft => {
                 let expr = self.expression()?;
                 let value_type = expr.get_value_type();
 
-                _ = self.consume(TokenKind::ParenRight, "expected ')' after grouping".to_string())?;
+                _ = self.consume(
+                    TokenKind::ParenRight,
+                    "expected ')' after grouping".to_string(),
+                )?;
 
                 let grouping_expr = GroupingExpr {
                     line: token.line,
                     column: token.column,
                     expression: expr,
-                    value_type: value_type
+                    value_type: value_type,
                 };
 
                 Ok(Expression::Grouping(Box::new(grouping_expr)))
             }
 
-            _ => {
-                Err(ParseError { line: token.line, column: token.column, context: format!("unhandled primary token {:?}", token) })
-            }
+            _ => Err(ParseError {
+                line: token.line,
+                column: token.column,
+                context: format!("unhandled primary token {:?}", token),
+            }),
         }
     }
 
@@ -851,11 +912,15 @@ impl<'a>  Parser<'a> {
 
     fn consume(&mut self, kind: TokenKind, error_message: String) -> Result<Token<'a>, ParseError> {
         if self.check(kind) {
-            return Ok(self.advance())
+            return Ok(self.advance());
         }
 
         let current = self.peek();
-        return Err(ParseError { line: current.line, column: current.column, context: error_message })
+        return Err(ParseError {
+            line: current.line,
+            column: current.column,
+            context: error_message,
+        });
     }
 
     fn match_tokens(&mut self, kinds: &[TokenKind]) -> bool {
@@ -879,10 +944,10 @@ impl<'a>  Parser<'a> {
 
     fn previous(&self) -> Token<'a> {
         if self.current == 0 {
-            return Token::none()
+            return Token::none();
         }
 
-        return self.tokens[self.current - 1].clone()
+        return self.tokens[self.current - 1].clone();
     }
 
     fn peek(&self) -> Token<'a> {
@@ -915,6 +980,6 @@ impl<'a>  Parser<'a> {
             return true;
         }
 
-        return self.tokens[self.current].kind == TokenKind::Eof
+        return self.tokens[self.current].kind == TokenKind::Eof;
     }
 }

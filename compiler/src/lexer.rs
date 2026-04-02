@@ -67,8 +67,8 @@ pub enum TokenKind {
     NewLine,
     Colon,
     Comma,
-    
-    Eof
+
+    Eof,
 }
 
 #[derive(Debug, Clone)]
@@ -76,12 +76,17 @@ pub struct Token<'a> {
     pub kind: TokenKind,
     pub lexeme: &'a str,
     pub line: usize,
-    pub column: usize
+    pub column: usize,
 }
 
 impl Token<'_> {
     pub fn none() -> Self {
-        return Token {kind: TokenKind::None, lexeme: "", line: 0, column: 0};
+        return Token {
+            kind: TokenKind::None,
+            lexeme: "",
+            line: 0,
+            column: 0,
+        };
     }
 }
 
@@ -89,7 +94,7 @@ impl Token<'_> {
 pub struct ScanError {
     pub line: usize,
     pub column: usize,
-    pub context: String
+    pub context: String,
 }
 
 impl fmt::Display for ScanError {
@@ -97,13 +102,10 @@ impl fmt::Display for ScanError {
         write!(
             f,
             "ScanError at line {}, column {}: {}",
-            self.line,
-            self.column,
-            self.context
+            self.line, self.column, self.context
         )
     }
 }
-
 
 pub fn parse_tokens(source: &str) -> Result<Vec<Token<'_>>, Vec<ScanError>> {
     let parser = Parser {
@@ -126,7 +128,7 @@ struct Parser<'a> {
     line: usize,
     column: usize,
     errors: Vec<ScanError>,
-    tokens: Vec<Token<'a>>
+    tokens: Vec<Token<'a>>,
 }
 
 impl<'a> Parser<'a> {
@@ -158,22 +160,22 @@ impl<'a> Parser<'a> {
         match current_char {
             '+' => {
                 self.emit_current_simple_token(TokenKind::Plus);
-            },
+            }
             '-' => {
                 self.emit_current_simple_token(TokenKind::Minus);
-            },
+            }
             '/' => {
                 self.emit_current_simple_token(TokenKind::Slash);
-            },
+            }
             '*' => {
                 self.emit_current_simple_token(TokenKind::Star);
-            },
+            }
             '%' => {
                 self.emit_current_simple_token(TokenKind::Mod);
-            },
+            }
             '^' => {
                 self.emit_current_simple_token(TokenKind::Caret);
-            },
+            }
 
             '<' => {
                 if self.match_char('=') {
@@ -181,52 +183,51 @@ impl<'a> Parser<'a> {
                 } else {
                     self.emit_current_simple_token(TokenKind::Less);
                 }
-            },
+            }
             '>' => {
                 if self.match_char('=') {
                     self.emit_current_simple_token(TokenKind::GreaterEqual);
                 } else {
                     self.emit_current_simple_token(TokenKind::Greater);
                 }
-            },
+            }
             '=' => {
                 if self.match_char('=') {
                     self.emit_current_simple_token(TokenKind::EqualEqual);
                 } else {
                     self.emit_current_simple_token(TokenKind::Equal);
                 }
-            },
+            }
             '!' => {
                 if self.match_char('=') {
                     self.emit_current_simple_token(TokenKind::NotEqual);
                 } else {
                     self.emit_current_simple_token(TokenKind::Not);
                 }
-            },
-
+            }
 
             '(' => {
                 self.emit_current_simple_token(TokenKind::ParenLeft);
-            },
+            }
             ')' => {
                 self.emit_current_simple_token(TokenKind::ParenRight);
-            },
+            }
 
             '{' => {
                 self.emit_current_simple_token(TokenKind::BraceLeft);
-            },
+            }
             '}' => {
                 self.emit_current_simple_token(TokenKind::BraceRight);
-            },
+            }
             '[' => {
                 self.emit_current_simple_token(TokenKind::SquareLeft);
-            },
+            }
             ']' => {
                 self.emit_current_simple_token(TokenKind::SquareRight);
-            },
+            }
             ':' => self.emit_current_simple_token(TokenKind::Colon),
             ',' => self.emit_current_simple_token(TokenKind::Comma),
-            
+
             x if x.is_ascii_digit() => self.scan_number(),
 
             x if is_identifier_start(x) => self.scan_identifier(),
@@ -303,7 +304,7 @@ impl<'a> Parser<'a> {
                     self.line += 1;
                     self.column = 0;
                     _ = self.advance();
-                },
+                }
                 '/' => {
                     if self.peek_next() == '/' {
                         while !self.is_at_end() && self.peek() != '\n' {
@@ -329,7 +330,7 @@ impl<'a> Parser<'a> {
             kind,
             lexeme: lexeme,
             line,
-            column
+            column,
         };
 
         self.tokens.push(token);
@@ -339,7 +340,7 @@ impl<'a> Parser<'a> {
         let error = ScanError {
             context: message,
             line,
-            column
+            column,
         };
 
         self.errors.push(error);
@@ -364,23 +365,23 @@ impl<'a> Parser<'a> {
 
     pub fn peek(&self) -> char {
         if self.is_at_end() {
-            return '\0'
+            return '\0';
         }
 
-        return self.source.chars().nth(self.current).unwrap()
+        return self.source.chars().nth(self.current).unwrap();
     }
 
     pub fn peek_next(&self) -> char {
         if self.current + 1 >= self.source.len() {
-            return '\0'
+            return '\0';
         }
 
-        return self.source.chars().nth(self.current + 1).unwrap()
+        return self.source.chars().nth(self.current + 1).unwrap();
     }
 
     pub fn advance(&mut self) -> char {
         if self.is_at_end() {
-            return '\0'
+            return '\0';
         }
 
         self.current += 1;

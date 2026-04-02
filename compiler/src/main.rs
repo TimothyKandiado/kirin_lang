@@ -27,7 +27,10 @@ fn main() {
         let errors = ast_result.unwrap_err();
 
         for error in errors {
-            println!("[Error][line: {}, column: {}] '{}'", error.line, error.column, error.context)
+            println!(
+                "[Error][line: {}, column: {}] '{}'",
+                error.line, error.column, error.context
+            )
         }
         return;
     }
@@ -37,5 +40,4 @@ fn main() {
     for stmt in ast {
         println!("{:?}", stmt);
     }
-
 }
