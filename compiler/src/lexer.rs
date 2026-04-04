@@ -272,6 +272,8 @@ impl<'a> Parser<'a> {
 
         match segment {
             "fn" => self.emit_token(TokenKind::Fn, "", line, column),
+            "if" => self.emit_token(TokenKind::If, "", line, column),
+            "else" => self.emit_token(TokenKind::Else, "", line, column),
             "for" => self.emit_token(TokenKind::For, "", line, column),
             "i64" => self.emit_token(TokenKind::I64, "", line, column),
             "f64" => self.emit_token(TokenKind::F64, "", line, column),
