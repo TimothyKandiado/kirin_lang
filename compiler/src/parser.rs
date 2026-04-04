@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt::{self};
 
 use crate::lexer::{Token, TokenKind};
 
@@ -183,7 +183,7 @@ impl fmt::Display for ValueType {
                 format!(
                     "fn ({}): {}",
                     params.join(", "),
-                    func_sign.return_type.to_string()
+                    func_sign.return_type
                 )
             }
         };

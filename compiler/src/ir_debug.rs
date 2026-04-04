@@ -1,4 +1,4 @@
-use crate::{ir::{IrBlock, IrFunction, IrModule}, parser::format_type};
+use crate::ir::{IrBlock, IrFunction, IrModule};
 
 fn print_indent(size: usize) {
     for _ in 0..size {
@@ -41,7 +41,7 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
                 println(
                 2,
-                format!("native fn {} ({}) : {}", name, params, ret_type.to_string()),
+                format!("native fn {} ({}) : {}", name, params, ret_type),
             );
             },
             IrFunction::Bytecode {
@@ -53,11 +53,11 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 reg_types,
             } => {
                 let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
-                println(2, format!("fn {} ({}) : {}", name, params, ret_type.to_string()));
+                println(2, format!("fn {} ({}) : {}", name, params, ret_type));
 
                 println(4, "registers:".to_string());
                 for (index, reg) in reg_types.iter().enumerate() {
-                    println(6, format!("[{}] : {}", index, reg.to_string()))
+                    println(6, format!("[{}] : {}", index, reg))
                 }
 
                 for block in blocks {
