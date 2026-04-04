@@ -32,11 +32,7 @@ impl<'a> SymbolTable<'a> {
         self.scopes.iter().rev().find_map(|scope| {
             let val = scope.get(name);
 
-            if let Some(val) = val.cloned() {
-                Some(val)
-            } else {
-                None
-            }
+            val.cloned()
         })
     }
 }
@@ -53,6 +49,12 @@ pub struct TypeChecker<'a> {
     errors: Vec<TypeError>,
     functions: HashMap<&'a str, FunctionSignature>,
     current_return_type: Option<ValueType>,
+}
+
+impl<'a> Default for TypeChecker<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'a> TypeChecker<'a> {
@@ -201,8 +203,7 @@ impl<'a> TypeChecker<'a> {
                     let init_ty = self.check_expression(init);
                     if let (Ok(()), Ok(())) =
                         (require_defined(&decl.value_type), require_defined(&init_ty))
-                    {
-                        if !types_compatible(&decl.value_type, &init_ty) {
+                        && !types_compatible(&decl.value_type, &init_ty) {
                             self.error(
                                 decl.line,
                                 decl.column,
@@ -214,7 +215,6 @@ impl<'a> TypeChecker<'a> {
                                 ),
                             );
                         }
-                    }
                 }
 
                 self.symbols.declare(decl.name, decl.value_type.clone());
@@ -548,14 +548,15 @@ impl<'a> TypeChecker<'a> {
             call.value_type = sig.return_type.clone();
             sig.return_type
         } else {
-            if func_name.is_none() {
-                self.error(call.line, call.column, "callee must be a named function");
-            } else {
+            if let Some(func_name) = func_name {
                 self.error(
                     call.line,
                     call.column,
-                    format!("call to undefined function '{}'", func_name.unwrap()),
+                    format!("call to undefined function '{}'", func_name),
                 );
+                
+            } else {
+                self.error(call.line, call.column, "callee must be a named function");
             }
             ValueType::Undefined
         };
@@ -591,7 +592,7 @@ impl<'a> TypeChecker<'a> {
     }
 }
 
-pub fn check_types<'a>(statements: &mut [Statement<'a>]) {}
+pub fn check_types<'a>(_statements: &mut [Statement<'a>]) {}
 
 fn is_numeric(ty: &ValueType) -> bool {
     matches!(ty, ValueType::I64 | ValueType::F64)

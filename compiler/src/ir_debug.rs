@@ -46,7 +46,7 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 params,
                 ret_type,
                 blocks,
-                reg_count,
+                reg_count: _,
                 reg_types,
             } => {
                 println(2, format!("fn {} ({:?}) : {:?}", name, params, ret_type));

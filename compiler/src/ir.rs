@@ -281,7 +281,7 @@ impl<'a> IrBuilder<'a> {
                         return_type,
                     } => {
                         self.functions.push(IrFunction::Native {
-                            name: *name,
+                            name,
                             params: params.clone(),
                             ret_type: return_type.clone(),
                         });
@@ -300,7 +300,7 @@ impl<'a> IrBuilder<'a> {
                         self.current_function = Some(self.functions.len());
 
                         self.functions.push(IrFunction::Bytecode {
-                            name: *name,
+                            name,
                             params: params.clone(),
                             ret_type: return_type.clone(),
                             blocks: Vec::new(),
@@ -430,14 +430,8 @@ impl<'a> IrBuilder<'a> {
             }
 
             Statement::Return(ret_stmt) => {
-                let reg = if let Some(expr) = &ret_stmt.value {
-                    Some(
-                        self.lower_expression(expr)
-                            .expect("return expression must yield a value"),
-                    )
-                } else {
-                    None
-                };
+                let reg = ret_stmt.value.as_ref().map(|expr| self.lower_expression(expr)
+                            .expect("return expression must yield a value"));
 
                 self.push_instruction(IrInstruction::Return { val: reg });
             }
@@ -606,12 +600,7 @@ impl<'a> IrBuilder<'a> {
             .last_mut()
             .expect("expected valid scope before getting local");
 
-        let local = top_scope.get(name);
-        if let Some(local) = local {
-            Some(*local)
-        } else {
-            None
-        }
+        top_scope.get(name).copied()
     }
 
     fn build_module(self) -> IrModule<'a> {

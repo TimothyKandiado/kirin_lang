@@ -44,7 +44,7 @@ fn main() {
 
     let errors = type_checker.check_module(&mut ast);
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         for error in errors {
             println!(
                 "[Type Error][line: {}, column: {}] '{}'",
