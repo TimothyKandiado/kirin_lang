@@ -1,9 +1,15 @@
 package main
 
-native fn print(args: any): void
+native fn print(arg: any): void
 
 fn main(): void {
     x : i64 = 800
+
+    if x > 500 {
+        print("x > 500")
+    } else {
+        print("x <= 500")
+    }
 
     print(x)
 }

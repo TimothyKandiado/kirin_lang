@@ -4,3 +4,6 @@ pub mod parser;
 pub mod ir;
 pub mod ir_debug;
 pub mod type_check;
+pub mod code_gen;
+pub mod program;
+pub mod instruction;
