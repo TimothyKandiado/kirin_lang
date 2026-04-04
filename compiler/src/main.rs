@@ -1,4 +1,7 @@
-use compiler::{ir::lower_ast, ir_debug::debug_ir_module, lexer::parse_tokens, parser::parse_ast};
+use compiler::{
+    ir::lower_ast, ir_debug::debug_ir_module, lexer::parse_tokens, parser::parse_ast,
+    type_check::TypeChecker,
+};
 
 fn main() {
     let source = std::fs::read_to_string("../samples/hello.kin").unwrap();
@@ -24,17 +27,30 @@ fn main() {
     if let Err(errors) = ast_result {
         for error in errors {
             println!(
-                "[Error][line: {}, column: {}] '{}'",
+                "[Parse Error][line: {}, column: {}] '{}'",
                 error.line, error.column, error.context
             )
         }
         return;
     }
 
-    let ast = ast_result.unwrap();
+    let mut ast = ast_result.unwrap();
 
-    for stmt in &ast {
-        println!("{:?}", stmt);
+    // for stmt in &ast {
+    //     println!("{:?}", stmt);
+    // }
+
+    let type_checker = TypeChecker::new();
+
+    let errors = type_checker.check_module(&mut ast);
+
+    if errors.len() > 0 {
+        for error in errors {
+            println!(
+                "[Type Error][line: {}, column: {}] '{}'",
+                error.line, error.column, error.context
+            )
+        }
     }
 
     let ir_module = lower_ast(&ast);

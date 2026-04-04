@@ -15,7 +15,7 @@ fn print_block(indent: usize, block: &IrBlock) {
     println(indent, format!("block {}:", block.label));
 
     for inst in &block.instructions {
-        println(indent+2, format!("{:?}", inst));
+        println(indent + 2, format!("{:?}", inst));
     }
 }
 
@@ -33,17 +33,29 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
 
     for function in &ir_module.functions {
         match function {
-            IrFunction::Native { name, params, ret_type } => {
-                println(2, format!("native fn {} ({:?}) : {:?}", name, params, ret_type))
-            },
-            IrFunction::Bytecode { name, params, ret_type, blocks, reg_count, reg_types } => {
+            IrFunction::Native {
+                name,
+                params,
+                ret_type,
+            } => println(
+                2,
+                format!("native fn {} ({:?}) : {:?}", name, params, ret_type),
+            ),
+            IrFunction::Bytecode {
+                name,
+                params,
+                ret_type,
+                blocks,
+                reg_count,
+                reg_types,
+            } => {
                 println(2, format!("fn {} ({:?}) : {:?}", name, params, ret_type));
 
                 println(4, "registers:".to_string());
                 for (index, reg) in reg_types.iter().enumerate() {
                     println(6, format!("[{}] : {:?}", index, reg))
                 }
-                
+
                 for block in blocks {
                     print_block(4, block);
                 }
@@ -52,7 +64,4 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
 
         println!()
     }
-
 }
-
-

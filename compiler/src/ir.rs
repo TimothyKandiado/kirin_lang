@@ -1,7 +1,8 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::parser::{
-    BinaryExprOp, Expression, FuncParam, FunctionDeclStmt, LiteralValue, Statement, UnaryExprOp, ValueType
+    BinaryExprOp, Expression, FuncParam, FunctionDeclStmt, LiteralValue, Statement, UnaryExprOp,
+    ValueType,
 };
 
 pub type Reg = usize;
@@ -33,7 +34,7 @@ pub enum IrInstruction<'a> {
 
     ConstStr {
         dest: Reg,
-        val: &'a str
+        val: &'a str,
     },
 
     LoadGlobal {
@@ -115,7 +116,7 @@ pub enum IrFunction<'a> {
     },
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct IrModule<'a> {
     pub package_name: &'a str,
     pub file_name: &'a str,
@@ -146,89 +147,121 @@ struct IrBuilder<'a> {
 impl<'a> IrBuilder<'a> {
     pub fn lower_expression(&mut self, expr: &Expression<'a>) -> Option<Reg> {
         match expr {
-            Expression::None => {None},
+            Expression::None => None,
             Expression::Binary(bin) => {
-                let lhs = self.lower_expression(&bin.left).expect("lhs must yield value");
-                let rhs = self.lower_expression(&bin.right).expect("rhs must yield value");
+                let lhs = self
+                    .lower_expression(&bin.left)
+                    .expect("lhs must yield value");
+                let rhs = self
+                    .lower_expression(&bin.right)
+                    .expect("rhs must yield value");
 
                 let dest = self.get_register(bin.value_type.clone());
 
-                self.push_instruction(IrInstruction::BinOp { dest, op: bin.op, lhs, rhs, val_type: bin.value_type.clone() });
+                self.push_instruction(IrInstruction::BinOp {
+                    dest,
+                    op: bin.op,
+                    lhs,
+                    rhs,
+                    val_type: bin.value_type.clone(),
+                });
 
                 Some(dest)
-            },
+            }
             Expression::Unary(unary) => {
-                let rhs = self.lower_expression(&unary.value).expect("unary expression must yield a value");
+                let rhs = self
+                    .lower_expression(&unary.value)
+                    .expect("unary expression must yield a value");
                 let dest = self.get_register(unary.value_type.clone());
 
-                self.push_instruction(IrInstruction::UnaryOp { dest, op: unary.op, rhs, val_type: unary.value_type.clone() });
+                self.push_instruction(IrInstruction::UnaryOp {
+                    dest,
+                    op: unary.op,
+                    rhs,
+                    val_type: unary.value_type.clone(),
+                });
 
                 Some(dest)
-            },
-            Expression::Grouping(grouping) => {
-                self.lower_expression(&grouping.expression)
-            },
+            }
+            Expression::Grouping(grouping) => self.lower_expression(&grouping.expression),
             Expression::Assign(assign) => {
-                let value = self.lower_expression(&assign.value).expect("assignment expression must yield a value");
+                let value = self
+                    .lower_expression(&assign.value)
+                    .expect("assignment expression must yield a value");
 
                 let local = self.get_local(assign.name);
                 if let Some(local) = local {
-                    self.push_instruction(IrInstruction::Copy { dest: local, source: value });
+                    self.push_instruction(IrInstruction::Copy {
+                        dest: local,
+                        source: value,
+                    });
                 }
 
                 None
-            },
+            }
 
             Expression::Variable(variable) => {
                 if let Some(local) = self.get_local(variable.name) {
-                    return Some(local)
+                    return Some(local);
                 }
 
                 if let Some(global) = self.globals.get(variable.name) {
                     let dest = self.get_register(global.val_type.clone());
 
-                    self.push_instruction(IrInstruction::LoadGlobal { dest, name: variable.name });
+                    self.push_instruction(IrInstruction::LoadGlobal {
+                        dest,
+                        name: variable.name,
+                    });
 
-                    return Some(dest)
+                    return Some(dest);
                 }
 
                 panic!("undefined variable name {}", variable.name);
-            },
+            }
 
             Expression::Literal(literal) => {
                 let dest = self.get_register(literal.value_type.clone());
 
                 match literal.value {
                     LiteralValue::F64(val) => {
-                        self.push_instruction(IrInstruction::ConstF64 { dest, val});
-                    },
+                        self.push_instruction(IrInstruction::ConstF64 { dest, val });
+                    }
                     LiteralValue::I64(val) => {
-                        self.push_instruction(IrInstruction::ConstI64 { dest, val});
-                    },
+                        self.push_instruction(IrInstruction::ConstI64 { dest, val });
+                    }
                     LiteralValue::Bool(val) => {
-                        self.push_instruction(IrInstruction::ConstBool { dest, val});
-                    },
+                        self.push_instruction(IrInstruction::ConstBool { dest, val });
+                    }
                     LiteralValue::String(val) => {
-                        self.push_instruction(IrInstruction::ConstStr { dest, val});
-                    },
+                        self.push_instruction(IrInstruction::ConstStr { dest, val });
+                    }
                 }
 
                 Some(dest)
-            },
+            }
 
             Expression::Call(call) => {
-                let callee = self.lower_expression(&call.callee).expect("callee expression should yield a value");
+                let callee = self
+                    .lower_expression(&call.callee)
+                    .expect("callee expression should yield a value");
 
                 let mut args = Vec::new();
 
                 for arg in &call.arguments {
-                    let reg = self.lower_expression(arg).expect("argument expression should yield a value");
+                    let reg = self
+                        .lower_expression(arg)
+                        .expect("argument expression should yield a value");
                     args.push(reg);
                 }
                 let dest = self.get_register(call.value_type.clone());
 
-                self.push_instruction(IrInstruction::Call { dest: Some(dest), callee: Callee::Indirect(callee), args, val_type: call.value_type.clone()});
-                
+                self.push_instruction(IrInstruction::Call {
+                    dest: Some(dest),
+                    callee: Callee::Indirect(callee),
+                    args,
+                    val_type: call.value_type.clone(),
+                });
+
                 Some(dest)
             }
         }
@@ -305,7 +338,9 @@ impl<'a> IrBuilder<'a> {
             }
 
             Statement::If(if_stmt) => {
-                let condition_reg = self.lower_expression(&if_stmt.condition).expect("condition expression must yield a value");
+                let condition_reg = self
+                    .lower_expression(&if_stmt.condition)
+                    .expect("condition expression must yield a value");
 
                 let (branch_block_idx, branch_inst_idx) =
                     self.push_instruction(IrInstruction::Branch {
@@ -383,7 +418,9 @@ impl<'a> IrBuilder<'a> {
                 let reg = self.add_local(var_decl.name, var_decl.value_type.clone());
 
                 if let Some(expr) = &var_decl.value {
-                    let result = self.lower_expression(expr).expect("assignment expression must yield a value");
+                    let result = self
+                        .lower_expression(expr)
+                        .expect("assignment expression must yield a value");
 
                     self.push_instruction(IrInstruction::Copy {
                         dest: reg,
@@ -394,7 +431,10 @@ impl<'a> IrBuilder<'a> {
 
             Statement::Return(ret_stmt) => {
                 let reg = if let Some(expr) = &ret_stmt.value {
-                    Some(self.lower_expression(expr).expect("return expression must yield a value"))
+                    Some(
+                        self.lower_expression(expr)
+                            .expect("return expression must yield a value"),
+                    )
                 } else {
                     None
                 };
@@ -550,7 +590,10 @@ impl<'a> IrBuilder<'a> {
     fn add_local(&mut self, name: &'a str, value_type: ValueType) -> Reg {
         let reg = self.get_register(value_type);
 
-        let top_scope = self.scope_stack.last_mut().expect("expected valid scope before adding local");
+        let top_scope = self
+            .scope_stack
+            .last_mut()
+            .expect("expected valid scope before adding local");
 
         top_scope.insert(name, reg);
 
@@ -558,7 +601,10 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn get_local(&mut self, name: &'a str) -> Option<Reg> {
-        let top_scope = self.scope_stack.last_mut().expect("expected valid scope before getting local");
+        let top_scope = self
+            .scope_stack
+            .last_mut()
+            .expect("expected valid scope before getting local");
 
         let local = top_scope.get(name);
         if let Some(local) = local {
@@ -569,7 +615,12 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn build_module(self) -> IrModule<'a> {
-        IrModule { package_name: self.package_name, file_name: "", functions: self.functions, globals: self.globals }
+        IrModule {
+            package_name: self.package_name,
+            file_name: "",
+            functions: self.functions,
+            globals: self.globals,
+        }
     }
 }
 
@@ -612,5 +663,4 @@ pub fn lower_ast<'a>(statements: &[Statement<'a>]) -> IrModule<'a> {
     }
 
     ir_builder.build_module()
-
 }

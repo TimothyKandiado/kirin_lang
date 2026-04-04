@@ -941,7 +941,7 @@ impl<'a> Parser<'a> {
                                 value_type: ValueType::I64,
                             };
 
-                            return Ok(Expression::Literal(literal_expr))
+                            return Ok(Expression::Literal(literal_expr));
                         }
 
                         let literal_expr = LiteralExpr {
