@@ -16,12 +16,12 @@ impl Expression<'_> {
     pub fn get_value_type(&self) -> ValueType {
         match self {
             Self::Assign(_) => ValueType::Void,
-            Self::Binary(bin) => bin.value_type,
-            Self::Unary(un) => un.value_type,
-            Self::Literal(lit) => lit.value_type,
-            Self::Grouping(group) => group.value_type,
-            Self::Call(call) => call.value_type,
-            Self::Variable(var) => var.value_type,
+            Self::Binary(bin) => bin.value_type.clone(),
+            Self::Unary(un) => un.value_type.clone(),
+            Self::Literal(lit) => lit.value_type.clone(),
+            Self::Grouping(group) => group.value_type.clone(),
+            Self::Call(call) => call.value_type.clone(),
+            Self::Variable(var) => var.value_type.clone(),
             Self::None => ValueType::Undefined,
         }
     }
@@ -95,7 +95,7 @@ pub struct UnaryExpr<'a> {
     pub value_type: ValueType,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum UnaryExprOp {
     Neg,
     Not,
@@ -150,7 +150,7 @@ pub enum LiteralValue<'a> {
     Bool(bool),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ValueType {
     Undefined,
     I64,
@@ -159,6 +159,13 @@ pub enum ValueType {
     Bool,
     Void,
     Any,
+    Fn(Box<FunctionSignature>),
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct FunctionSignature {
+    pub parameters: Vec<ValueType>,
+    pub return_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
@@ -184,27 +191,103 @@ pub struct VarDeclStmt<'a> {
 
 #[derive(Debug, Clone)]
 pub enum FunctionDeclStmt<'a> {
-    Native(NativeFuncDecl<'a>),
-    UserFunc(UserFuncDecl<'a>),
+    Native {
+        name: &'a str,
+        params: Vec<FuncParam<'a>>,
+        line: usize,
+        column: usize,
+        return_type: ValueType,
+    },
+    Bytecode {
+        name: &'a str,
+        params: Vec<FuncParam<'a>>,
+        body: Statement<'a>,
+        line: usize,
+        column: usize,
+        return_type: ValueType,
+    },
 }
 
-#[derive(Debug, Clone)]
-pub struct NativeFuncDecl<'a> {
-    pub name: &'a str,
-    pub params: Vec<FuncParam<'a>>,
-    pub line: usize,
-    pub column: usize,
-    pub return_type: ValueType,
-}
+impl<'a> FunctionDeclStmt<'a> {
+    pub fn get_name(&self) -> &'a str {
+        match self {
+            Self::Native {
+                name,
+                params: _,
+                line: _,
+                column: _,
+                return_type: _,
+            } => name,
+            Self::Bytecode {
+                name,
+                params: _,
+                line: _,
+                column: _,
+                return_type: _,
+                body: _,
+            } => name,
+        }
+    }
 
-#[derive(Debug, Clone)]
-pub struct UserFuncDecl<'a> {
-    pub name: &'a str,
-    pub params: Vec<FuncParam<'a>>,
-    pub body: Statement<'a>,
-    pub line: usize,
-    pub column: usize,
-    pub return_type: ValueType,
+    pub fn get_return_type(&self) -> ValueType {
+        match self {
+            Self::Native {
+                name: _,
+                params: _,
+                line: _,
+                column: _,
+                return_type,
+            } => return_type.clone(),
+            Self::Bytecode {
+                name: _,
+                params: _,
+                line: _,
+                column: _,
+                return_type,
+                body: _,
+            } => return_type.clone(),
+        }
+    }
+
+    pub fn get_signature(&self) -> FunctionSignature {
+        match self {
+            Self::Native {
+                name: _,
+                params,
+                line: _,
+                column: _,
+                return_type,
+            } => {
+                let parameters = params
+                    .iter()
+                    .map(|param| param.value_type.clone())
+                    .collect::<Vec<ValueType>>();
+
+                FunctionSignature {
+                    parameters,
+                    return_type: return_type.clone(),
+                }
+            }
+            Self::Bytecode {
+                name: _,
+                params,
+                line: _,
+                column: _,
+                return_type,
+                body: _,
+            } => {
+                let parameters = params
+                    .iter()
+                    .map(|param| param.value_type.clone())
+                    .collect::<Vec<ValueType>>();
+
+                FunctionSignature {
+                    parameters,
+                    return_type: return_type.clone(),
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -432,7 +515,7 @@ impl<'a> Parser<'a> {
 
         self.skip(TokenKind::NewLine);
         if modifiers.contains(&TokenKind::Native) {
-            let native_func = NativeFuncDecl {
+            let native_func = FunctionDeclStmt::Native {
                 name: name.lexeme,
                 line: name.line,
                 column: name.column,
@@ -440,14 +523,12 @@ impl<'a> Parser<'a> {
                 return_type,
             };
 
-            return Ok(Statement::FunctionDecl(Box::new(FunctionDeclStmt::Native(
-                native_func,
-            ))));
+            return Ok(Statement::FunctionDecl(Box::new(native_func)));
         }
 
         let body = self.statement()?;
 
-        let user_defined_func = UserFuncDecl {
+        let user_defined_func = FunctionDeclStmt::Bytecode {
             name: name.lexeme,
             line: name.line,
             column: name.column,
@@ -456,9 +537,7 @@ impl<'a> Parser<'a> {
             return_type,
         };
 
-        Ok(Statement::FunctionDecl(Box::new(
-            FunctionDeclStmt::UserFunc(user_defined_func),
-        )))
+        Ok(Statement::FunctionDecl(Box::new(user_defined_func)))
     }
 
     fn statement(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -630,7 +709,7 @@ impl<'a> Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined,
+                value_type: ValueType::Bool,
             };
 
             return Ok(Expression::Binary(Box::new(binary_expr)));
@@ -654,7 +733,7 @@ impl<'a> Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined,
+                value_type: ValueType::Bool,
             };
 
             return Ok(Expression::Binary(Box::new(binary_expr)));
@@ -684,7 +763,7 @@ impl<'a> Parser<'a> {
                 op,
                 left: expr,
                 right,
-                value_type: ValueType::Undefined,
+                value_type: ValueType::Bool,
             };
 
             return Ok(Expression::Binary(Box::new(binary_expr)));
@@ -854,6 +933,17 @@ impl<'a> Parser<'a> {
 
                 match number_result {
                     Ok(value) => {
+                        if value.fract() == 0.0 {
+                            let literal_expr = LiteralExpr {
+                                line: token.line,
+                                column: token.column,
+                                value: LiteralValue::I64(value as i64),
+                                value_type: ValueType::I64,
+                            };
+
+                            return Ok(Expression::Literal(literal_expr))
+                        }
+
                         let literal_expr = LiteralExpr {
                             line: token.line,
                             column: token.column,

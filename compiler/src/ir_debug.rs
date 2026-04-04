@@ -1,0 +1,58 @@
+use crate::ir::{IrBlock, IrFunction, IrModule};
+
+fn print_indent(size: usize) {
+    for _ in 0..size {
+        print!(" ")
+    }
+}
+
+fn println(indent: usize, text: String) {
+    print_indent(indent);
+    println!("{}", text);
+}
+
+fn print_block(indent: usize, block: &IrBlock) {
+    println(indent, format!("block {}:", block.label));
+
+    for inst in &block.instructions {
+        println(indent+2, format!("{:?}", inst));
+    }
+}
+
+pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
+    println(0, "==== Ir Module ====".to_string());
+    println(2, format!("package: {}", ir_module.package_name));
+    println(2, format!("file: {}", ir_module.file_name));
+
+    println(0, "==== Globals ====".to_string());
+    for (name, value) in &ir_module.globals {
+        println(2, format!("[{}] = {:?}", name, value));
+    }
+
+    println(0, "==== Functions ====".to_string());
+
+    for function in &ir_module.functions {
+        match function {
+            IrFunction::Native { name, params, ret_type } => {
+                println(2, format!("native fn {} ({:?}) : {:?}", name, params, ret_type))
+            },
+            IrFunction::Bytecode { name, params, ret_type, blocks, reg_count, reg_types } => {
+                println(2, format!("fn {} ({:?}) : {:?}", name, params, ret_type));
+
+                println(4, "registers:".to_string());
+                for (index, reg) in reg_types.iter().enumerate() {
+                    println(6, format!("[{}] : {:?}", index, reg))
+                }
+                
+                for block in blocks {
+                    print_block(4, block);
+                }
+            }
+        }
+
+        println!()
+    }
+
+}
+
+

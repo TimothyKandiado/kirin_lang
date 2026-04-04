@@ -1,4 +1,4 @@
-use compiler::{lexer::parse_tokens, parser::parse_ast};
+use compiler::{ir::lower_ast, ir_debug::debug_ir_module, lexer::parse_tokens, parser::parse_ast};
 
 fn main() {
     let source = std::fs::read_to_string("../samples/hello.kin").unwrap();
@@ -33,7 +33,10 @@ fn main() {
 
     let ast = ast_result.unwrap();
 
-    for stmt in ast {
+    for stmt in &ast {
         println!("{:?}", stmt);
     }
+
+    let ir_module = lower_ast(&ast);
+    debug_ir_module(&ir_module)
 }

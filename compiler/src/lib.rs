@@ -1,2 +1,6 @@
 pub mod lexer;
 pub mod parser;
+//pub mod mid_ir;
+pub mod ir;
+pub mod ir_debug;
+pub mod type_check;

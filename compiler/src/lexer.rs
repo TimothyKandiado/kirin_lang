@@ -228,6 +228,8 @@ impl<'a> Parser<'a> {
             ':' => self.emit_current_simple_token(TokenKind::Colon),
             ',' => self.emit_current_simple_token(TokenKind::Comma),
 
+            '"' => self.scan_string(),
+
             x if x.is_ascii_digit() => self.scan_number(),
 
             x if is_identifier_start(x) => self.scan_identifier(),
@@ -285,6 +287,26 @@ impl<'a> Parser<'a> {
 
             _ => self.emit_token(TokenKind::Identifier, segment, line, column),
         }
+    }
+
+    fn scan_string(&mut self) {
+        let line = self.line;
+        let column = self.column;
+
+        self.start = self.current;
+
+        while !self.is_at_end() && self.peek() != '"' {
+            let c = self.advance();
+
+            if c == '\\' {
+                _ = self.advance();
+            }
+        }
+
+        let segment = &self.source[self.start..self.current];
+        self.consume('"', "expected '\"' to end string literal".to_string());
+
+        self.emit_token(TokenKind::StringLiteral, segment, line, column);
     }
 
     fn skip_white_space(&mut self) {
@@ -352,6 +374,15 @@ impl<'a> Parser<'a> {
 
     fn emit_current_simple_token(&mut self, kind: TokenKind) {
         self.emit_token(kind, "", self.line, self.column - 1);
+    }
+
+    fn consume(&mut self, c: char, message: String) {
+        if self.peek() != c {
+            self.emit_current_error(message);
+            return;
+        }
+
+        _ = self.advance();
     }
 
     pub fn match_char(&mut self, c: char) -> bool {
