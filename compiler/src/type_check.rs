@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use crate::parser::{
-    BinaryExpr, BinaryExprOp, CallExpr, Expression, FunctionDeclStmt, FunctionSignature,
-    LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType,
+    BinaryExpr, BinaryExprOp, CallExpr, Expression, FunctionDeclStmt, FunctionSignature, LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType, format_binary_op, format_type
 };
 
 struct SymbolTable<'a> {
@@ -331,7 +330,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "left operand of '{}' must be i64 or f64, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&lhs_ty)
                         ),
                     );
@@ -342,7 +341,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "right operand of '{}' must be i64 or f64, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&rhs_ty)
                         ),
                     );
@@ -377,7 +376,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "left operand of '{}' must be i64 or f64, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&lhs_ty)
                         ),
                     );
@@ -388,7 +387,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "right operand of '{}' must be i64 or f64, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&rhs_ty)
                         ),
                     );
@@ -431,7 +430,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "left operand of '{}' must be bool, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&lhs_ty)
                         ),
                     );
@@ -442,7 +441,7 @@ impl<'a> TypeChecker<'a> {
                         bin.column,
                         format!(
                             "right operand of '{}' must be bool, got {}",
-                            fmt_binop(bin.op),
+                            format_binary_op(bin.op),
                             format_type(&rhs_ty)
                         ),
                     );
@@ -610,45 +609,3 @@ fn require_defined(ty: &ValueType) -> Result<(), String> {
     }
 }
 
-fn format_type(ty: &ValueType) -> String {
-    match ty {
-        ValueType::I64 => "i64".to_string(),
-        ValueType::F64 => "f64".to_string(),
-        ValueType::Bool => "bool".to_string(),
-        ValueType::String => "str".to_string(),
-        ValueType::Void => "void".to_string(),
-        ValueType::Any => "any".to_string(),
-        ValueType::Undefined => "undefined".to_string(),
-        ValueType::Fn(func_sign) => {
-            let mut params = Vec::new();
-            for param in &func_sign.parameters {
-                params.push(format_type(param));
-            }
-
-            format!(
-                "fn ({}): {}",
-                params.join(", "),
-                format_type(&func_sign.return_type)
-            )
-        }
-    }
-}
-
-fn fmt_binop(op: BinaryExprOp) -> &'static str {
-    match op {
-        BinaryExprOp::Add => "+",
-        BinaryExprOp::Sub => "-",
-        BinaryExprOp::Mul => "*",
-        BinaryExprOp::Div => "/",
-        BinaryExprOp::Mod => "%",
-        BinaryExprOp::Pow => "^",
-        BinaryExprOp::Greater => ">",
-        BinaryExprOp::GreaterEqual => ">=",
-        BinaryExprOp::Less => "<",
-        BinaryExprOp::LessEqual => "<=",
-        BinaryExprOp::Equal => "==",
-        BinaryExprOp::NotEqual => "!=",
-        BinaryExprOp::And => "and",
-        BinaryExprOp::Or => "or",
-    }
-}

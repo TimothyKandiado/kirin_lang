@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 use crate::parser::{
     BinaryExprOp, Expression, FuncParam, FunctionDeclStmt, LiteralValue, Statement, UnaryExprOp,
@@ -130,11 +130,19 @@ pub struct IrGlobal<'a> {
     pub init: Option<IrConstant<'a>>,
 }
 
+impl fmt::Display for IrGlobal<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(type = {}), (init = {:?})", self.val_type, self.init)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum IrConstant<'a> {
     String(&'a str),
     Function(&'a str),
 }
+
+
 
 struct IrBuilder<'a> {
     pub package_name: &'a str,

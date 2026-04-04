@@ -1,4 +1,4 @@
-use crate::ir::{IrBlock, IrFunction, IrModule};
+use crate::{ir::{IrBlock, IrFunction, IrModule}, parser::format_type};
 
 fn print_indent(size: usize) {
     for _ in 0..size {
@@ -26,7 +26,7 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
 
     println(0, "==== Globals ====".to_string());
     for (name, value) in &ir_module.globals {
-        println(2, format!("[{}] = {:?}", name, value));
+        println(2, format!("[{}] = {}", name, value));
     }
 
     println(0, "==== Functions ====".to_string());
@@ -37,10 +37,13 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 name,
                 params,
                 ret_type,
-            } => println(
+            } => {
+                let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
+                println(
                 2,
-                format!("native fn {} ({:?}) : {:?}", name, params, ret_type),
-            ),
+                format!("native fn {} ({}) : {}", name, params, ret_type.to_string()),
+            );
+            },
             IrFunction::Bytecode {
                 name,
                 params,
@@ -49,11 +52,12 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 reg_count: _,
                 reg_types,
             } => {
-                println(2, format!("fn {} ({:?}) : {:?}", name, params, ret_type));
+                let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
+                println(2, format!("fn {} ({}) : {}", name, params, ret_type.to_string()));
 
                 println(4, "registers:".to_string());
                 for (index, reg) in reg_types.iter().enumerate() {
-                    println(6, format!("[{}] : {:?}", index, reg))
+                    println(6, format!("[{}] : {}", index, reg.to_string()))
                 }
 
                 for block in blocks {

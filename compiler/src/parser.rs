@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use crate::lexer::{Token, TokenKind};
 
 #[derive(Debug, Clone)]
@@ -162,6 +164,33 @@ pub enum ValueType {
     Fn(Box<FunctionSignature>),
 }
 
+impl fmt::Display for ValueType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = match self {
+            ValueType::I64 => "i64".to_string(),
+            ValueType::F64 => "f64".to_string(),
+            ValueType::Bool => "bool".to_string(),
+            ValueType::String => "str".to_string(),
+            ValueType::Void => "void".to_string(),
+            ValueType::Any => "any".to_string(),
+            ValueType::Undefined => "undefined".to_string(),
+            ValueType::Fn(func_sign) => {
+                let mut params = Vec::new();
+                for param in &func_sign.parameters {
+                    params.push(param.to_string());
+                }
+
+                format!(
+                    "fn ({}): {}",
+                    params.join(", "),
+                    func_sign.return_type.to_string()
+                )
+            }
+        };
+        write!(f, "{}", val)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct FunctionSignature {
     pub parameters: Vec<ValueType>,
@@ -294,6 +323,12 @@ impl<'a> FunctionDeclStmt<'a> {
 pub struct FuncParam<'a> {
     pub name: &'a str,
     pub value_type: ValueType,
+}
+
+impl fmt::Display for FuncParam<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.name, self.value_type)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1071,5 +1106,28 @@ impl<'a> Parser<'a> {
         }
 
         self.tokens[self.current].kind == TokenKind::Eof
+    }
+}
+
+pub fn format_type(ty: &ValueType) -> String {
+    ty.to_string()
+}
+
+pub fn format_binary_op(op: BinaryExprOp) -> &'static str {
+    match op {
+        BinaryExprOp::Add => "+",
+        BinaryExprOp::Sub => "-",
+        BinaryExprOp::Mul => "*",
+        BinaryExprOp::Div => "/",
+        BinaryExprOp::Mod => "%",
+        BinaryExprOp::Pow => "^",
+        BinaryExprOp::Greater => ">",
+        BinaryExprOp::GreaterEqual => ">=",
+        BinaryExprOp::Less => "<",
+        BinaryExprOp::LessEqual => "<=",
+        BinaryExprOp::Equal => "==",
+        BinaryExprOp::NotEqual => "!=",
+        BinaryExprOp::And => "and",
+        BinaryExprOp::Or => "or",
     }
 }
