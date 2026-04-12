@@ -14,6 +14,7 @@ pub enum OpCode {
     ConstStr,
 
     Move,
+    Swap,
 
     AddI64,
     SubI64,
@@ -21,19 +22,22 @@ pub enum OpCode {
     DivI64,
     ModI64,
     PowI64,
+    NegI64,
 
     CmpLtI64,
     CmpLeI64,
-    CmpEqI64,
+
+    CmpEq,
 
     Not,
     And,
     Or,
 
-    Branch,
+    BrFalse,
     Jump,
 
-    Call,
+    Call,   // direct call
+    Invoke, // indirect call
     Ret,
     RetVoid,
     Halt,
@@ -51,6 +55,7 @@ impl OpCode {
             x if x == OpCode::ConstStr as u32 => OpCode::ConstStr,
 
             x if x == OpCode::Move as u32 => OpCode::Move,
+            x if x == OpCode::Swap as u32 => OpCode::Swap,
 
             x if x == OpCode::AddI64 as u32 => OpCode::AddI64,
             x if x == OpCode::SubI64 as u32 => OpCode::SubI64,
@@ -58,19 +63,22 @@ impl OpCode {
             x if x == OpCode::DivI64 as u32 => OpCode::DivI64,
             x if x == OpCode::ModI64 as u32 => OpCode::ModI64,
             x if x == OpCode::PowI64 as u32 => OpCode::PowI64,
+            x if x == OpCode::NegI64 as u32 => OpCode::NegI64,
 
             x if x == OpCode::CmpLtI64 as u32 => OpCode::CmpLtI64,
             x if x == OpCode::CmpLeI64 as u32 => OpCode::CmpLeI64,
-            x if x == OpCode::CmpEqI64 as u32 => OpCode::CmpEqI64,
+            x if x == OpCode::CmpEq as u32 => OpCode::CmpEq,
 
             x if x == OpCode::Not as u32 => OpCode::Not,
             x if x == OpCode::And as u32 => OpCode::And,
             x if x == OpCode::Or as u32 => OpCode::Or,
 
-            x if x == OpCode::Branch as u32 => OpCode::Branch,
+            x if x == OpCode::BrFalse as u32 => OpCode::BrFalse,
             x if x == OpCode::Jump as u32 => OpCode::Jump,
 
             x if x == OpCode::Call as u32 => OpCode::Call,
+            x if x == OpCode::Invoke as u32 => OpCode::Invoke,
+
             x if x == OpCode::Ret as u32 => OpCode::Ret,
             x if x == OpCode::RetVoid as u32 => OpCode::RetVoid,
             x if x == OpCode::Halt as u32 => OpCode::Halt,
@@ -334,7 +342,7 @@ mod tests {
 
     #[test]
     fn test_format_a_encoding() {
-        let actual_opcode = OpCode::CmpEqI64;
+        let actual_opcode = OpCode::CmpEq;
         let actual_dest = 10;
         let actual_src1 = 11;
         let actual_src2 = 12;

@@ -251,26 +251,27 @@ impl<'a> IrBuilder<'a> {
                     // optimization for direct calls
                     if self.get_local(var_expr.name).is_none()
                         && let Some(global) = self.globals.get(var_expr.name)
-                            && let ValueType::Fn(_) = global.val_type {
-                                let mut args = Vec::new();
+                        && let ValueType::Fn(_) = global.val_type
+                    {
+                        let mut args = Vec::new();
 
-                                for arg in &call.arguments {
-                                    let reg = self
-                                        .lower_expression(arg)
-                                        .expect("argument expression should yield a value");
-                                    args.push(reg);
-                                }
-                                let dest = self.get_register(call.value_type.clone());
+                        for arg in &call.arguments {
+                            let reg = self
+                                .lower_expression(arg)
+                                .expect("argument expression should yield a value");
+                            args.push(reg);
+                        }
+                        let dest = self.get_register(call.value_type.clone());
 
-                                self.push_instruction(IrInstruction::Call {
-                                    dest: Some(dest),
-                                    callee: Callee::Direct(var_expr.name),
-                                    args,
-                                    val_type: call.value_type.clone(),
-                                });
+                        self.push_instruction(IrInstruction::Call {
+                            dest: Some(dest),
+                            callee: Callee::Direct(var_expr.name),
+                            args,
+                            val_type: call.value_type.clone(),
+                        });
 
-                                return Some(dest);
-                            }
+                        return Some(dest);
+                    }
                 }
 
                 let callee = self
@@ -629,8 +630,7 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn get_local(&mut self, name: &'a str) -> Option<Reg> {
-        self
-            .scope_stack
+        self.scope_stack
             .iter()
             .rev()
             .find_map(|scope| scope.get(name).copied())

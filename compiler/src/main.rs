@@ -1,6 +1,10 @@
 use compiler::{
-    ir::lower_ast, ir_debug::debug_ir_module, lexer::parse_tokens, parser::parse_ast,
-    program::build_program, type_check::TypeChecker,
+    ir::lower_ast,
+    ir_debug::debug_ir_module,
+    lexer::parse_tokens,
+    parser::parse_ast,
+    program::{build_program, debug_program},
+    type_check::TypeChecker,
 };
 
 fn main() {
@@ -56,5 +60,6 @@ fn main() {
     let ir_module = lower_ast(&ast);
     debug_ir_module(&ir_module);
 
-    let _ = build_program(ir_module);
+    let program = build_program(ir_module);
+    debug_program(&program);
 }

@@ -1,7 +1,4 @@
-use crate::{
-    ir::{Callee, IrFunction, IrInstruction},
-    program::get_type_size,
-};
+use crate::ir::{Callee, IrFunction, IrInstruction};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Default)]
 struct IrInstCoord {
@@ -125,13 +122,11 @@ impl RegisterAllocator {
         let mut virtual_registers: Vec<VirtualRegister> = reg_types
             .iter()
             .enumerate()
-            .map(|(idx, reg_type)| {
-                VirtualRegister {
-                    id: idx,
-                    size: get_type_size(reg_type),
-                    start_use: IrInstCoord::default(),
-                    end_use: IrInstCoord::default(),
-                }
+            .map(|(idx, reg_type)| VirtualRegister {
+                id: idx,
+                size: reg_type.get_size(),
+                start_use: IrInstCoord::default(),
+                end_use: IrInstCoord::default(),
             })
             .collect();
 
