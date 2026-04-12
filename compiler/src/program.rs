@@ -54,6 +54,12 @@ pub struct Program<'a> {
     pub functions: Vec<FunctionMetadata>,
 }
 
+impl Default for Program<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Program<'_> {
     pub fn new() -> Self {
         Self {
@@ -89,12 +95,12 @@ impl<'a> ProgramBuilder<'a> {
                 IrFunction::Bytecode {
                     name,
                     params,
-                    ret_type,
-                    blocks,
-                    reg_count,
-                    reg_types,
+                    ret_type: _,
+                    blocks: _,
+                    reg_count: _,
+                    reg_types: _,
                 } => {
-                    let constant = Constant::String(*name);
+                    let constant = Constant::String(name);
                     let name_idx = self.push_constant(constant) as u16;
 
                     let func_metadata = FunctionMetadata {
@@ -111,9 +117,9 @@ impl<'a> ProgramBuilder<'a> {
                 IrFunction::Native {
                     name,
                     params,
-                    ret_type,
+                    ret_type: _,
                 } => {
-                    let constant = Constant::String(*name);
+                    let constant = Constant::String(name);
                     let name_idx = self.push_constant(constant) as u16;
 
                     let func_metadata = FunctionMetadata {
@@ -149,9 +155,9 @@ impl<'a> ProgramBuilder<'a> {
             name: _,
             params: _,
             ret_type: _,
-            blocks,
-            reg_count,
-            reg_types,
+            blocks: _,
+            reg_count: _,
+            reg_types: _,
         } = function
         else {
             return;
@@ -168,10 +174,10 @@ impl<'a> ProgramBuilder<'a> {
         let existing = self.constants.iter().position(|constant| constant == &new);
 
         if let Some(index) = existing {
-            return index;
+            index
         } else {
             self.constants.push(new);
-            return self.constants.len() - 1;
+            self.constants.len() - 1
         }
     }
 }

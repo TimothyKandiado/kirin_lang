@@ -102,6 +102,12 @@ pub struct InstructionBuilder {
     instruction: Instruction,
 }
 
+impl Default for InstructionBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InstructionBuilder {
     pub fn new() -> Self {
         Self { instruction: 0 }
@@ -156,10 +162,10 @@ impl InstructionBuilder {
     }
 
     pub fn set_imm19(mut self, value: i32) -> Self {
-        assert!(value >= -262144 && value <= 262143);
+        assert!((-262144..=262143).contains(&value));
 
         let sign: u32 = if value < 0 { 1 } else { 0 };
-        let value = value.abs() as u32;
+        let value = value.unsigned_abs();
 
         self.instruction |= value & IMM19_MASK;
         self.instruction |= sign << 18;
@@ -230,9 +236,9 @@ impl InstructionDecoder {
         if sign == 1 {
             // Negative number
             let value: i32 = raw as i32;
-            return -value;
+            -value
         } else {
-            return raw as i32;
+            raw as i32
         }
     }
 

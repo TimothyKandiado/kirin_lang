@@ -249,9 +249,9 @@ impl<'a> IrBuilder<'a> {
             Expression::Call(call) => {
                 if let Expression::Variable(var_expr) = &call.callee {
                     // optimization for direct calls
-                    if self.get_local(var_expr.name).is_none() {
-                        if let Some(global) = self.globals.get(var_expr.name) {
-                            if let ValueType::Fn(_) = global.val_type {
+                    if self.get_local(var_expr.name).is_none()
+                        && let Some(global) = self.globals.get(var_expr.name)
+                            && let ValueType::Fn(_) = global.val_type {
                                 let mut args = Vec::new();
 
                                 for arg in &call.arguments {
@@ -271,8 +271,6 @@ impl<'a> IrBuilder<'a> {
 
                                 return Some(dest);
                             }
-                        }
-                    }
                 }
 
                 let callee = self
@@ -631,11 +629,11 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn get_local(&mut self, name: &'a str) -> Option<Reg> {
-        return self
+        self
             .scope_stack
             .iter()
             .rev()
-            .find_map(|scope| scope.get(name).copied());
+            .find_map(|scope| scope.get(name).copied())
     }
 
     fn build_module(self) -> IrModule<'a> {

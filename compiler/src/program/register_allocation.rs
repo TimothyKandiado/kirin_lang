@@ -42,7 +42,7 @@ impl RegisterAllocator {
     }
 
     fn expire_old_intervals(&mut self, current_start: IrInstCoord) {
-        self.active.retain(|(vreg, alloc, end)| {
+        self.active.retain(|(_vreg, alloc, end)| {
             if *end < current_start {
                 self.free_list.push((alloc.offset, alloc.size));
                 false
@@ -101,7 +101,7 @@ impl RegisterAllocator {
 
             let a = alloc.allocate(v.size);
 
-            alloc.active.push((v.id, a.clone(), v.end_use));
+            alloc.active.push((v.id, a, v.end_use));
             result[v.id] = a;
         }
 
@@ -111,11 +111,11 @@ impl RegisterAllocator {
     /// (total, allocations)
     pub fn allocate_for_function(function: &IrFunction<'_>) -> (usize, Vec<RegisterAllocation>) {
         let IrFunction::Bytecode {
-            name,
-            params,
-            ret_type,
+            name: _,
+            params: _,
+            ret_type: _,
             blocks,
-            reg_count,
+            reg_count: _,
             reg_types,
         } = function
         else {
@@ -126,12 +126,12 @@ impl RegisterAllocator {
             .iter()
             .enumerate()
             .map(|(idx, reg_type)| {
-                return VirtualRegister {
+                VirtualRegister {
                     id: idx,
                     size: get_type_size(reg_type),
                     start_use: IrInstCoord::default(),
                     end_use: IrInstCoord::default(),
-                };
+                }
             })
             .collect();
 
@@ -147,10 +147,10 @@ impl RegisterAllocator {
                 match inst {
                     IrInstruction::BinOp {
                         dest,
-                        op,
+                        op: _,
                         lhs,
                         rhs,
-                        val_type,
+                        val_type: _,
                     } => {
                         if started_virtual_registers.contains(dest) {
                             virtual_registers[*dest].end_use = ir_coord;
@@ -175,9 +175,9 @@ impl RegisterAllocator {
                     }
                     IrInstruction::UnaryOp {
                         dest,
-                        op,
+                        op: _,
                         rhs,
-                        val_type,
+                        val_type: _,
                     } => {
                         if started_virtual_registers.contains(dest) {
                             virtual_registers[*dest].end_use = ir_coord;
