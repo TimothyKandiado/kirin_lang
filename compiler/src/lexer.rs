@@ -286,6 +286,7 @@ impl<'a> Parser<'a> {
             "pub" => self.emit_token(TokenKind::Pub, "", line, column),
             "native" => self.emit_token(TokenKind::Native, "", line, column),
             "package" => self.emit_token(TokenKind::Package, "", line, column),
+            "return" => self.emit_token(TokenKind::Return, "", line, column),
 
             _ => self.emit_token(TokenKind::Identifier, segment, line, column),
         }

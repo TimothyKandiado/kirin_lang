@@ -580,6 +580,10 @@ impl<'a> Parser<'a> {
             return self.block_stmt();
         }
 
+        if self.match_tokens(&[TokenKind::Return]) {
+            return self.return_stmt();
+        }
+
         self.expression_stmt()
     }
 
@@ -633,6 +637,27 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Statement::Block(block_stmt))
+    }
+
+    fn return_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
+        let prev = self.previous();
+
+        let mut value = None;
+
+        if !self.check(TokenKind::NewLine) {
+            value = Some(self.expression()?);
+        }
+
+        _ = self.consume(
+            TokenKind::NewLine,
+            "expect newline after return statement".to_string(),
+        )?;
+
+        Ok(Statement::Return(ReturnStmt {
+            value,
+            line: prev.line,
+            column: prev.column,
+        }))
     }
 
     fn expression_stmt(&mut self) -> Result<Statement<'a>, ParseError> {

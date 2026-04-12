@@ -38,7 +38,9 @@ pub fn debug_program(program: &Program) {
             OpCode::NoOp => println!("NoOp"),
             OpCode::ConstI64Imm => {
                 let imm = InstructionDecoder::decode_imm19(instruction);
-                println!("ConstI64Imm {}", imm);
+                let dest = InstructionDecoder::decode_dest(instruction);
+
+                println!("ConstI64Imm {} | {}", dest, imm);
             }
             OpCode::ConstI64 => print_format_c(instruction),
             OpCode::ConstF64 => print_format_c(instruction),
@@ -48,8 +50,17 @@ pub fn debug_program(program: &Program) {
             OpCode::Move => print_format_a(instruction),
             OpCode::Swap => print_format_a(instruction),
             OpCode::Or => print_format_a(instruction),
-            OpCode::BrFalse => print_format_c(instruction),
-            OpCode::Jump => print_format_c(instruction),
+            OpCode::BrFalse => {
+                let offset = InstructionDecoder::decode_imm19(instruction);
+                let cond = InstructionDecoder::decode_dest(instruction);
+
+                println!("BrFalse {} | {}", cond, offset);
+            }
+            OpCode::Jump => {
+                let offset = InstructionDecoder::decode_imm19(instruction);
+
+                println!("Jump {}", offset);
+            }
             OpCode::Call => print_format_b(instruction),
             OpCode::Invoke => print_format_b(instruction),
             OpCode::Ret => print_format_c(instruction),

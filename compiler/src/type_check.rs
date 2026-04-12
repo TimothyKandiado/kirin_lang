@@ -361,6 +361,7 @@ impl<'a> TypeChecker<'a> {
                 }
                 // Result type mirrors the operands (or Undefined on error).
                 if is_numeric(&lhs_ty) && lhs_ty == rhs_ty {
+                    bin.value_type = lhs_ty.clone();
                     lhs_ty
                 } else {
                     ValueType::Undefined

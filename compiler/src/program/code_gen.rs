@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    instruction::{Instruction, InstructionBuilder, OpCode},
+    instruction::{Instruction, InstructionBuilder, InstructionDecoder, OpCode},
     ir::{Callee, IrBlock, IrFunction, IrInstruction, IrModule},
     parser::{BinaryExprOp, UnaryExprOp, ValueType},
     program::{
@@ -105,7 +105,7 @@ impl<'a> ProgramBuilder<'a> {
         let IrFunction::Bytecode {
             name: _,
             params: _,
-            ret_type: _,
+            ret_type,
             blocks,
             reg_count: _,
             reg_types,
@@ -134,6 +134,18 @@ impl<'a> ProgramBuilder<'a> {
             unresolved_jumps.append(&mut jumps);
         }
 
+        if let Some(&last_inst) = self.instructions.last() {
+            let opcode = OpCode::from_u32(InstructionDecoder::decode_opcode(last_inst));
+
+            if ret_type == &ValueType::Void && opcode != OpCode::RetVoid {
+                self.instructions.push(
+                    InstructionBuilder::new()
+                        .set_opcode(OpCode::RetVoid)
+                        .build(),
+                );
+            }
+        }
+
         let end_inst = self.instructions.len();
 
         let func_length = end_inst - start_inst;
@@ -150,27 +162,32 @@ impl<'a> ProgramBuilder<'a> {
                     condition_reg,
                     label,
                 } => {
-                    let instruction = InstructionBuilder::new_format_c(
-                        OpCode::BrFalse,
-                        condition_reg as u32,
-                        *block_map
-                            .get(&label)
-                            .expect("undefined block while resolving jump")
-                            as u32,
-                    );
+                    let target_inst = *block_map
+                        .get(&label)
+                        .expect("undefined block while resolving jump");
+
+                    let offset = target_inst as i64 - instr_idx as i64;
+
+                    let instruction = InstructionBuilder::new()
+                        .set_opcode(OpCode::BrFalse)
+                        .set_dest(condition_reg as u32)
+                        .set_imm19(offset as i32)
+                        .build();
 
                     self.instructions[instr_idx] = instruction;
                 }
 
                 InstrJump::Jump { instr_idx, label } => {
-                    let instruction = InstructionBuilder::new_format_c(
-                        OpCode::Jump,
-                        0 as u32,
-                        *block_map
-                            .get(&label)
-                            .expect("undefined block while resolving jump")
-                            as u32,
-                    );
+                    let target_inst = *block_map
+                        .get(&label)
+                        .expect("undefined block while resolving jump");
+
+                    let offset = target_inst as i64 - instr_idx as i64;
+
+                    let instruction = InstructionBuilder::new()
+                        .set_opcode(OpCode::Jump)
+                        .set_imm19(offset as i32)
+                        .build();
 
                     self.instructions[instr_idx] = instruction;
                 }
