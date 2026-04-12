@@ -1,9 +1,7 @@
-pub mod lexer;
-pub mod parser;
-//pub mod mid_ir;
+pub mod instruction;
 pub mod ir;
 pub mod ir_debug;
-pub mod type_check;
-pub mod code_gen;
+pub mod lexer;
+pub mod parser;
 pub mod program;
-pub mod instruction;
+pub mod type_check;

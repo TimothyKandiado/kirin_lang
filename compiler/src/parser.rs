@@ -180,11 +180,7 @@ impl fmt::Display for ValueType {
                     params.push(param.to_string());
                 }
 
-                format!(
-                    "fn ({}): {}",
-                    params.join(", "),
-                    func_sign.return_type
-                )
+                format!("fn ({}): {}", params.join(", "), func_sign.return_type)
             }
         };
         write!(f, "{}", val)
@@ -834,7 +830,7 @@ impl<'a> Parser<'a> {
     fn multiplication(&mut self) -> Result<Expression<'a>, ParseError> {
         let expr = self.power()?;
 
-        if self.match_tokens(&[TokenKind::Slash, TokenKind::Star]) {
+        if self.match_tokens(&[TokenKind::Slash, TokenKind::Star, TokenKind::Mod]) {
             let prev = self.previous();
 
             let op = BinaryExprOp::from_token(&prev)?;

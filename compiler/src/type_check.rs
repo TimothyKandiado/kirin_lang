@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use crate::parser::{
-    BinaryExpr, BinaryExprOp, CallExpr, Expression, FunctionDeclStmt, FunctionSignature, LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType, format_binary_op, format_type
+    BinaryExpr, BinaryExprOp, CallExpr, Expression, FunctionDeclStmt, FunctionSignature,
+    LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType, format_binary_op, format_type,
 };
 
 struct SymbolTable<'a> {
@@ -202,18 +203,19 @@ impl<'a> TypeChecker<'a> {
                     let init_ty = self.check_expression(init);
                     if let (Ok(()), Ok(())) =
                         (require_defined(&decl.value_type), require_defined(&init_ty))
-                        && !types_compatible(&decl.value_type, &init_ty) {
-                            self.error(
-                                decl.line,
-                                decl.column,
-                                format!(
-                                    "variable '{}' declared as {} but initialised with {}",
-                                    decl.name,
-                                    format_type(&decl.value_type),
-                                    format_type(&init_ty)
-                                ),
-                            );
-                        }
+                        && !types_compatible(&decl.value_type, &init_ty)
+                    {
+                        self.error(
+                            decl.line,
+                            decl.column,
+                            format!(
+                                "variable '{}' declared as {} but initialised with {}",
+                                decl.name,
+                                format_type(&decl.value_type),
+                                format_type(&init_ty)
+                            ),
+                        );
+                    }
                 }
 
                 self.symbols.declare(decl.name, decl.value_type.clone());
@@ -553,7 +555,6 @@ impl<'a> TypeChecker<'a> {
                     call.column,
                     format!("call to undefined function '{}'", func_name),
                 );
-                
             } else {
                 self.error(call.line, call.column, "callee must be a named function");
             }
@@ -608,4 +609,3 @@ fn require_defined(ty: &ValueType) -> Result<(), String> {
         _ => Ok(()),
     }
 }
-

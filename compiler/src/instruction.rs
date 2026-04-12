@@ -13,6 +13,8 @@ pub enum OpCode {
     ConstFalse,
     ConstStr,
 
+    Move,
+
     AddI64,
     SubI64,
     MulI64,
@@ -40,36 +42,38 @@ pub enum OpCode {
 impl OpCode {
     pub fn from_u32(value: u32) -> Self {
         match value {
-            x if x == OpCode::NoOp as u32       => OpCode::NoOp,
+            x if x == OpCode::NoOp as u32 => OpCode::NoOp,
             x if x == OpCode::ConstI64Imm as u32 => OpCode::ConstI64Imm,
-            x if x == OpCode::ConstI64 as u32    => OpCode::ConstI64,
-            x if x == OpCode::ConstF64 as u32    => OpCode::ConstF64,
-            x if x == OpCode::ConstTrue as u32   => OpCode::ConstTrue,
-            x if x == OpCode::ConstFalse as u32  => OpCode::ConstFalse,
-            x if x == OpCode::ConstStr as u32    => OpCode::ConstStr,
+            x if x == OpCode::ConstI64 as u32 => OpCode::ConstI64,
+            x if x == OpCode::ConstF64 as u32 => OpCode::ConstF64,
+            x if x == OpCode::ConstTrue as u32 => OpCode::ConstTrue,
+            x if x == OpCode::ConstFalse as u32 => OpCode::ConstFalse,
+            x if x == OpCode::ConstStr as u32 => OpCode::ConstStr,
 
-            x if x == OpCode::AddI64 as u32      => OpCode::AddI64,
-            x if x == OpCode::SubI64 as u32      => OpCode::SubI64,
-            x if x == OpCode::MulI64 as u32      => OpCode::MulI64,
-            x if x == OpCode::DivI64 as u32      => OpCode::DivI64,
-            x if x == OpCode::ModI64 as u32      => OpCode::ModI64,
-            x if x == OpCode::PowI64 as u32      => OpCode::PowI64,
+            x if x == OpCode::Move as u32 => OpCode::Move,
 
-            x if x == OpCode::CmpLtI64 as u32    => OpCode::CmpLtI64,
-            x if x == OpCode::CmpLeI64 as u32    => OpCode::CmpLeI64,
-            x if x == OpCode::CmpEqI64 as u32    => OpCode::CmpEqI64,
+            x if x == OpCode::AddI64 as u32 => OpCode::AddI64,
+            x if x == OpCode::SubI64 as u32 => OpCode::SubI64,
+            x if x == OpCode::MulI64 as u32 => OpCode::MulI64,
+            x if x == OpCode::DivI64 as u32 => OpCode::DivI64,
+            x if x == OpCode::ModI64 as u32 => OpCode::ModI64,
+            x if x == OpCode::PowI64 as u32 => OpCode::PowI64,
 
-            x if x == OpCode::Not as u32         => OpCode::Not,
-            x if x == OpCode::And as u32         => OpCode::And,
-            x if x == OpCode::Or as u32          => OpCode::Or,
+            x if x == OpCode::CmpLtI64 as u32 => OpCode::CmpLtI64,
+            x if x == OpCode::CmpLeI64 as u32 => OpCode::CmpLeI64,
+            x if x == OpCode::CmpEqI64 as u32 => OpCode::CmpEqI64,
 
-            x if x == OpCode::Branch as u32      => OpCode::Branch,
-            x if x == OpCode::Jump as u32        => OpCode::Jump,
+            x if x == OpCode::Not as u32 => OpCode::Not,
+            x if x == OpCode::And as u32 => OpCode::And,
+            x if x == OpCode::Or as u32 => OpCode::Or,
 
-            x if x == OpCode::Call as u32        => OpCode::Call,
-            x if x == OpCode::Ret as u32         => OpCode::Ret,
-            x if x == OpCode::RetVoid as u32     => OpCode::RetVoid,
-            x if x == OpCode::Halt as u32        => OpCode::Halt,
+            x if x == OpCode::Branch as u32 => OpCode::Branch,
+            x if x == OpCode::Jump as u32 => OpCode::Jump,
+
+            x if x == OpCode::Call as u32 => OpCode::Call,
+            x if x == OpCode::Ret as u32 => OpCode::Ret,
+            x if x == OpCode::RetVoid as u32 => OpCode::RetVoid,
+            x if x == OpCode::Halt as u32 => OpCode::Halt,
 
             _ => panic!(
                 "invalid OpCode value: decimal={} hex={:#X} binary={:#b}",
@@ -100,7 +104,7 @@ pub struct InstructionBuilder {
 
 impl InstructionBuilder {
     pub fn new() -> Self {
-        Self {instruction: 0}
+        Self { instruction: 0 }
     }
 
     pub fn build(self) -> Instruction {
@@ -154,13 +158,49 @@ impl InstructionBuilder {
     pub fn set_imm19(mut self, value: i32) -> Self {
         assert!(value >= -262144 && value <= 262143);
 
-        let sign: u32 = if value < 0 {1} else {0};
+        let sign: u32 = if value < 0 { 1 } else { 0 };
         let value = value.abs() as u32;
-
 
         self.instruction |= value & IMM19_MASK;
         self.instruction |= sign << 18;
         self
+    }
+
+    /// create new instruction of the format Opcode | dest | src1 | src2
+    pub fn new_format_a(
+        opcode: OpCode,
+        dest: Instruction,
+        src1: Instruction,
+        src2: Instruction,
+    ) -> Instruction {
+        InstructionBuilder::new()
+            .set_opcode(opcode)
+            .set_dest(dest)
+            .set_src1(src1)
+            .set_src2(src2)
+            .build()
+    }
+
+    pub fn new_format_b(
+        opcode: OpCode,
+        dest: Instruction,
+        src1: Instruction,
+        const13: Instruction,
+    ) -> Instruction {
+        InstructionBuilder::new()
+            .set_opcode(opcode)
+            .set_dest(dest)
+            .set_src1(src1)
+            .set_const13(const13)
+            .build()
+    }
+
+    pub fn new_format_c(opcode: OpCode, dest: Instruction, const19: Instruction) -> Instruction {
+        InstructionBuilder::new()
+            .set_opcode(opcode)
+            .set_dest(dest)
+            .set_const19(const19)
+            .build()
     }
 }
 
@@ -286,4 +326,24 @@ mod tests {
         assert_eq!(actual_value, decoded_value)
     }
 
+    #[test]
+    fn test_format_a_encoding() {
+        let actual_opcode = OpCode::CmpEqI64;
+        let actual_dest = 10;
+        let actual_src1 = 11;
+        let actual_src2 = 12;
+
+        let instruction =
+            InstructionBuilder::new_format_a(actual_opcode, actual_dest, actual_src1, actual_src2);
+
+        let decoded_opcode = OpCode::from_u32(InstructionDecoder::decode_opcode(instruction));
+        let decoded_dest = InstructionDecoder::decode_dest(instruction);
+        let decoded_src1 = InstructionDecoder::decode_src1(instruction);
+        let decoded_src2 = InstructionDecoder::decode_src2(instruction);
+
+        assert_eq!(actual_opcode, decoded_opcode);
+        assert_eq!(actual_dest, decoded_dest);
+        assert_eq!(actual_src1, decoded_src1);
+        assert_eq!(actual_src2, decoded_src2);
+    }
 }

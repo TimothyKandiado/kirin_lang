@@ -38,12 +38,13 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 params,
                 ret_type,
             } => {
-                let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
-                println(
-                2,
-                format!("native fn {} ({}) : {}", name, params, ret_type),
-            );
-            },
+                let params = params
+                    .iter()
+                    .map(|param| param.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                println(2, format!("native fn {} ({}) : {}", name, params, ret_type));
+            }
             IrFunction::Bytecode {
                 name,
                 params,
@@ -52,7 +53,11 @@ pub fn debug_ir_module<'a>(ir_module: &'a IrModule<'a>) {
                 reg_count: _,
                 reg_types,
             } => {
-                let params = params.iter().map(|param| {param.to_string()}).collect::<Vec<String>>().join(", ");
+                let params = params
+                    .iter()
+                    .map(|param| param.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
                 println(2, format!("fn {} ({}) : {}", name, params, ret_type));
 
                 println(4, "registers:".to_string());

@@ -142,8 +142,6 @@ pub enum IrConstant<'a> {
     Function(&'a str),
 }
 
-
-
 struct IrBuilder<'a> {
     pub package_name: &'a str,
     pub globals: HashMap<&'a str, IrGlobal<'a>>,
@@ -249,6 +247,34 @@ impl<'a> IrBuilder<'a> {
             }
 
             Expression::Call(call) => {
+                if let Expression::Variable(var_expr) = &call.callee {
+                    // optimization for direct calls
+                    if self.get_local(var_expr.name).is_none() {
+                        if let Some(global) = self.globals.get(var_expr.name) {
+                            if let ValueType::Fn(_) = global.val_type {
+                                let mut args = Vec::new();
+
+                                for arg in &call.arguments {
+                                    let reg = self
+                                        .lower_expression(arg)
+                                        .expect("argument expression should yield a value");
+                                    args.push(reg);
+                                }
+                                let dest = self.get_register(call.value_type.clone());
+
+                                self.push_instruction(IrInstruction::Call {
+                                    dest: Some(dest),
+                                    callee: Callee::Direct(var_expr.name),
+                                    args,
+                                    val_type: call.value_type.clone(),
+                                });
+
+                                return Some(dest);
+                            }
+                        }
+                    }
+                }
+
                 let callee = self
                     .lower_expression(&call.callee)
                     .expect("callee expression should yield a value");
@@ -438,8 +464,10 @@ impl<'a> IrBuilder<'a> {
             }
 
             Statement::Return(ret_stmt) => {
-                let reg = ret_stmt.value.as_ref().map(|expr| self.lower_expression(expr)
-                            .expect("return expression must yield a value"));
+                let reg = ret_stmt.value.as_ref().map(|expr| {
+                    self.lower_expression(expr)
+                        .expect("return expression must yield a value")
+                });
 
                 self.push_instruction(IrInstruction::Return { val: reg });
             }
@@ -603,12 +631,11 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn get_local(&mut self, name: &'a str) -> Option<Reg> {
-        let top_scope = self
+        return self
             .scope_stack
-            .last_mut()
-            .expect("expected valid scope before getting local");
-
-        top_scope.get(name).copied()
+            .iter()
+            .rev()
+            .find_map(|scope| scope.get(name).copied());
     }
 
     fn build_module(self) -> IrModule<'a> {
