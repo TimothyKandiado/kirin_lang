@@ -9,6 +9,7 @@ use compiler::{
 
 fn main() {
     let source = std::fs::read_to_string("../samples/hello.kin").unwrap();
+    
 
     let results = parse_tokens(&source);
 
@@ -62,4 +63,7 @@ fn main() {
 
     let program = build_program(ir_module);
     debug_program(&program);
+
+    let mut output = std::fs::File::create("../samples/hello.knb").unwrap();
+    program.write_bytes(&mut output);
 }

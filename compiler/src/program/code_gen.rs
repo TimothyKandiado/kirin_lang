@@ -150,7 +150,7 @@ impl<'a> ProgramBuilder<'a> {
 
         let func_length = end_inst - start_inst;
 
-        self.functions[func_idx].code_offset = start_inst;
+        self.functions[func_idx].code_offset = start_inst as u32;
         self.functions[func_idx].code_length = func_length as u16;
         self.functions[func_idx].registers = total_registers as u8;
 
