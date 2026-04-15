@@ -1,17 +1,18 @@
 package main
 
-native fn print(arg: any): void
+native fn print_i64(arg: i64): void
+native fn print_str(arg: string): void
 
 fn main(): void {
     x : i64 = 800
 
     if x > 500 {
-        print("x > 500")
+        print_str("x > 500")
     } else {
-        print("x <= 500")
+        print_str("x <= 500")
     }
 
-    print(x)
+    print_i64(x)
 }
 
 fn add(a: i64, b: i64): i64 {

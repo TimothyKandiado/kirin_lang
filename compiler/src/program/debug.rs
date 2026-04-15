@@ -1,6 +1,7 @@
+use program::Program;
+
 use crate::{
     instruction::{Instruction, InstructionDecoder, OpCode},
-    program::Program,
 };
 
 pub fn debug_program(program: &Program) {

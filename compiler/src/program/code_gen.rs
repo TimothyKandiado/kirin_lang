@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
+use program::{Constant, FunctionKind, FunctionMetadata, Program, TypeInfo};
+
 use crate::{
     instruction::{Instruction, InstructionBuilder, InstructionDecoder, OpCode},
     ir::{Callee, IrBlock, IrFunction, IrInstruction, IrModule},
     parser::{BinaryExprOp, UnaryExprOp, ValueType},
     program::{
-        Constant, FunctionKind, FunctionMetadata, Program, TypeInfo,
         register_allocation::{RegisterAllocation, RegisterAllocator},
     },
 };
