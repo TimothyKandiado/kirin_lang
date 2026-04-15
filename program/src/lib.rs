@@ -1,4 +1,5 @@
 mod instruction;
+pub mod bytecode;
 
 use std::io::Write;
 

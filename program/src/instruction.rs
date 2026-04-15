@@ -171,3 +171,106 @@ impl InstructionDecoder {
         (instruction) & CONST13_MASK
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::instruction::{InstructionBuilder, InstructionDecoder};
+
+    #[test]
+    fn test_opcode_encoding() {
+        let actual_opcode = 10;
+
+        let instruction = InstructionBuilder::new().set_opcode(actual_opcode).build();
+
+        let decoded_opcode = InstructionDecoder::decode_opcode(instruction) as u8;
+
+        assert_eq!(actual_opcode, decoded_opcode)
+    }
+
+    #[test]
+    fn test_dest_encoding() {
+        let actual_dest = 13 as u32;
+
+        let instruction = InstructionBuilder::new().set_dest(actual_dest).build();
+
+        let decoded_dest = InstructionDecoder::decode_dest(instruction);
+
+        assert_eq!(actual_dest, decoded_dest)
+    }
+
+    #[test]
+    fn test_src1_encoding() {
+        let actual_src = 33 as u32;
+
+        let instruction = InstructionBuilder::new().set_src1(actual_src).build();
+
+        let decoded_src = InstructionDecoder::decode_src1(instruction);
+
+        assert_eq!(actual_src, decoded_src)
+    }
+
+    #[test]
+    fn test_src2_encoding() {
+        let actual_src = 13 as u32;
+
+        let instruction = InstructionBuilder::new().set_src2(actual_src).build();
+
+        let decoded_src = InstructionDecoder::decode_src2(instruction);
+
+        assert_eq!(actual_src, decoded_src)
+    }
+
+    #[test]
+    fn test_const19_encoding() {
+        let actual_value = 113 as u32;
+
+        let instruction = InstructionBuilder::new().set_const19(actual_value).build();
+
+        let decoded_value = InstructionDecoder::decode_const19(instruction);
+
+        assert_eq!(actual_value, decoded_value)
+    }
+
+    #[test]
+    fn test_const13_encoding() {
+        let actual_value = 113 as u32;
+
+        let instruction = InstructionBuilder::new().set_const13(actual_value).build();
+
+        let decoded_value = InstructionDecoder::decode_const13(instruction);
+
+        assert_eq!(actual_value, decoded_value)
+    }
+
+    #[test]
+    fn test_imm19_encoding() {
+        let actual_value = -113 as i32;
+
+        let instruction = InstructionBuilder::new().set_imm19(actual_value).build();
+
+        let decoded_value = InstructionDecoder::decode_imm19(instruction);
+
+        assert_eq!(actual_value, decoded_value)
+    }
+
+    #[test]
+    fn test_format_a_encoding() {
+        let actual_opcode = 12;
+        let actual_dest = 10;
+        let actual_src1 = 11;
+        let actual_src2 = 12;
+
+        let instruction =
+            InstructionBuilder::new_format_a(actual_opcode, actual_dest, actual_src1, actual_src2);
+
+        let decoded_opcode = InstructionDecoder::decode_opcode(instruction) as u8;
+        let decoded_dest = InstructionDecoder::decode_dest(instruction);
+        let decoded_src1 = InstructionDecoder::decode_src1(instruction);
+        let decoded_src2 = InstructionDecoder::decode_src2(instruction);
+
+        assert_eq!(actual_opcode, decoded_opcode);
+        assert_eq!(actual_dest, decoded_dest);
+        assert_eq!(actual_src1, decoded_src1);
+        assert_eq!(actual_src2, decoded_src2);
+    }
+}
