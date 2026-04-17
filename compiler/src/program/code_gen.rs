@@ -23,14 +23,14 @@ enum InstrJump {
     },
 }
 
-struct ProgramBuilder<'a> {
+struct ProgramBuilder {
     instructions: Vec<Instruction>,
-    constants: Vec<Constant<'a>>,
+    constants: Vec<Constant>,
     types: Vec<TypeInfo>,
     functions: Vec<FunctionMetadata>,
 }
 
-impl<'a> ProgramBuilder<'a> {
+impl ProgramBuilder {
     pub fn new() -> Self {
         Self {
             instructions: Vec::new(),
@@ -40,7 +40,7 @@ impl<'a> ProgramBuilder<'a> {
         }
     }
 
-    pub fn build_module(mut self, ir_module: IrModule<'a>) -> Program<'a> {
+    pub fn build_module(mut self, ir_module: IrModule<'_>) -> Program {
         // load function symbols
         for function in ir_module.functions.iter() {
             match function {
@@ -52,7 +52,7 @@ impl<'a> ProgramBuilder<'a> {
                     reg_count: _,
                     reg_types: _,
                 } => {
-                    let constant = Constant::String(name);
+                    let constant = Constant::String(name.to_string());
                     let name_idx = self.push_constant(constant) as u16;
 
                     let func_metadata = FunctionMetadata {
@@ -71,7 +71,7 @@ impl<'a> ProgramBuilder<'a> {
                     params,
                     ret_type: _,
                 } => {
-                    let constant = Constant::String(name);
+                    let constant = Constant::String(name.to_string());
                     let name_idx = self.push_constant(constant) as u16;
 
                     let func_metadata = FunctionMetadata {
@@ -100,7 +100,7 @@ impl<'a> ProgramBuilder<'a> {
         }
     }
 
-    fn build_function(&mut self, func_idx: usize, function: &IrFunction<'a>) {
+    fn build_function(&mut self, func_idx: usize, function: &IrFunction<'_>) {
         let (total_registers, reg_allocations) = RegisterAllocator::allocate_for_function(function);
 
         let IrFunction::Bytecode {
@@ -198,7 +198,7 @@ impl<'a> ProgramBuilder<'a> {
 
     fn build_block(
         &mut self,
-        block: &IrBlock<'a>,
+        block: &IrBlock<'_>,
         reg_allocations: &[RegisterAllocation],
         reg_types: &[ValueType],
     ) -> Vec<InstrJump> {
@@ -504,7 +504,7 @@ impl<'a> ProgramBuilder<'a> {
                 IrInstruction::ConstStr { dest, val } => {
                     let dest = reg_allocations[*dest].offset as u32;
 
-                    let const_idx = self.push_constant(Constant::String(*val));
+                    let const_idx = self.push_constant(Constant::String(val.to_string()));
                     self.instructions.push(InstructionBuilder::new_format_c(
                         OpCode::ConstStr,
                         dest,
@@ -583,7 +583,7 @@ impl<'a> ProgramBuilder<'a> {
                             let name_idx = self
                                 .constants
                                 .iter()
-                                .position(|c| c == &Constant::String(*name))
+                                .position(|c| c == &Constant::String(name.to_string()))
                                 .expect("function name not found in constants table");
 
                             let function_idx = self
@@ -633,7 +633,7 @@ impl<'a> ProgramBuilder<'a> {
         jumps
     }
 
-    fn push_constant(&mut self, new: Constant<'a>) -> usize {
+    fn push_constant(&mut self, new: Constant) -> usize {
         let existing = self.constants.iter().position(|constant| constant == &new);
 
         if let Some(index) = existing {
@@ -645,6 +645,6 @@ impl<'a> ProgramBuilder<'a> {
     }
 }
 
-pub fn build_program<'a>(ir_module: IrModule<'a>) -> Program<'a> {
+pub fn build_program<'a>(ir_module: IrModule<'a>) -> Program {
     ProgramBuilder::new().build_module(ir_module)
 }

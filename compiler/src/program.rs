@@ -1,9 +1,7 @@
 mod code_gen;
-mod debug;
 mod register_allocation;
 
 pub use code_gen::build_program;
-pub use debug::debug_program;
 
 use crate::parser::ValueType;
 
