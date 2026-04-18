@@ -194,7 +194,7 @@ impl ProgramBuilder {
 
                     let offset = target_inst as i64 - instr_idx as i64;
 
-                    let instruction = if offset > 1 {
+                    let instruction = if offset != 1 {
                         InstructionBuilder::new()
                             .set_opcode(OpCode::Jump)
                             .set_imm19(offset as i32)

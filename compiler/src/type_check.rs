@@ -161,6 +161,28 @@ impl<'a> TypeChecker<'a> {
                 }
             }
 
+            Statement::For(for_stmt) => {
+                if let Some(init) = &mut for_stmt.initializer {
+                    self.check_statement(init);
+                }
+                if let Some(cond) = &mut for_stmt.condition {
+                    let cond_ty = self.check_expression(cond);
+
+                    if cond_ty != ValueType::Bool {
+                    self.error(
+                        for_stmt.line,
+                        for_stmt.column,
+                        format!("if condition must be bool, got {}", format_type(&cond_ty)),
+                    );
+                }
+                }
+                if let Some(foot) = &mut for_stmt.footer {
+                    self.check_statement(foot);
+                }
+
+                self.check_statement(&mut for_stmt.body);
+            }
+
             Statement::Return(ret) => {
                 let expected = self.current_return_type.clone().unwrap_or(ValueType::Void);
                 match &mut ret.value {

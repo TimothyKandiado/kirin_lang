@@ -199,6 +199,7 @@ pub enum Statement<'a> {
     PackageDecl(PackageDeclstmt<'a>),
     FunctionDecl(Box<FunctionDeclStmt<'a>>),
     If(Box<IfStmt<'a>>),
+    For(Box<ForStmt<'a>>),
     Block(BlockStmt<'a>),
     Return(ReturnStmt<'a>),
     VarDecl(VarDeclStmt<'a>),
@@ -332,6 +333,16 @@ pub struct IfStmt<'a> {
     pub condition: Expression<'a>,
     pub then_branch: Statement<'a>,
     pub else_branch: Option<Statement<'a>>,
+    pub line: usize,
+    pub column: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ForStmt<'a> {
+    pub initializer: Option<Statement<'a>>,
+    pub condition: Option<Expression<'a>>,
+    pub footer: Option<Statement<'a>>,
+    pub body: Statement<'a>,
     pub line: usize,
     pub column: usize,
 }
@@ -486,10 +497,11 @@ impl<'a> Parser<'a> {
 
         let value = self.expression()?;
 
-        _ = self.consume(
-            TokenKind::NewLine,
-            "expected new line after var declaration".to_string(),
-        )?;
+        // _ = self.consume(
+        //     TokenKind::NewLine,
+        //     "expected new line after var declaration".to_string(),
+        // )?;
+        self.skip(TokenKind::NewLine);
 
         let var_decl = VarDeclStmt {
             name: name.lexeme,
@@ -576,6 +588,10 @@ impl<'a> Parser<'a> {
             return self.if_stmt();
         }
 
+        if self.match_tokens(&[TokenKind::For]) {
+            return self.for_stmt();
+        }
+
         if self.match_tokens(&[TokenKind::BraceLeft]) {
             return self.block_stmt();
         }
@@ -610,6 +626,44 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Statement::If(Box::new(if_stmt)))
+    }
+
+    fn for_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
+        let mut initializer = None;
+        let mut condition = None;
+        let mut footer = None;
+
+        let prev = self.previous();
+
+        if !self.check(TokenKind::Semicolon) {
+            initializer = Some(self.declaration()?);
+        }
+
+        self.consume(TokenKind::Semicolon, "expected ';' after initializer".to_string())?;
+        
+        if !self.check(TokenKind::Semicolon) {
+            condition = Some(self.expression()?);
+        }
+
+        self.consume(TokenKind::Semicolon, "expected ';' after condition".to_string())?;
+
+        if !self.check(TokenKind::BraceLeft) {
+            footer = Some(self.statement()?);
+        }
+
+        let body = self.statement()?;
+
+        let for_stmt = ForStmt {
+            initializer,
+            condition,
+            footer,
+            body,
+            line: prev.line,
+            column: prev.column,
+        };
+
+        Ok(Statement::For(Box::new(for_stmt)))
+
     }
 
     fn block_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -663,10 +717,11 @@ impl<'a> Parser<'a> {
     fn expression_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
         let expr = self.expression()?;
 
-        _ = self.consume(
-            TokenKind::NewLine,
-            "expected newline after expression".to_string(),
-        )?;
+        // _ = self.consume(
+        //     TokenKind::NewLine,
+        //     "expected newline after expression".to_string(),
+        // )?;
+        self.skip(TokenKind::NewLine);
 
         Ok(Statement::Expr(expr))
     }

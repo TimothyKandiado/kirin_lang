@@ -1,0 +1,12 @@
+package main
+
+native fn print_i64(arg: i64): void
+native fn print_str(arg: string): void
+
+fn main(): void {
+    print_str("hello loops")
+
+    for i : i64 = 0 ; i < 10 ; i = i + 1 {
+        print_i64(i)
+    }
+}

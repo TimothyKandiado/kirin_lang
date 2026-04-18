@@ -5,7 +5,14 @@ use compiler::{
 use program::debug_program;
 
 fn main() {
-    let source = std::fs::read_to_string("samples/hello.kin").unwrap();
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() < 2 {
+        print_help();
+        return;
+    }
+
+    let source = std::fs::read_to_string(&args[1]).unwrap();
 
     let results = parse_tokens(&source);
 
@@ -60,6 +67,20 @@ fn main() {
     let program = build_program(ir_module);
     debug_program(&program);
 
-    let mut output = std::fs::File::create("samples/hello.knb").unwrap();
+    let outfile = if args.len() >= 4 && args[2] == "-o" {
+        &args[3]
+    } else {
+        &args[1].replace("kin", "knb")
+    };
+
+    let mut output = std::fs::File::create(outfile).unwrap();
     program.write_bytes(&mut output);
+}
+
+
+fn print_help() {
+    println!("kirinc");
+    println!("Usage: compiler [file] [options]");
+    println!("Options: ");
+    println!("          -o [outfile]")
 }

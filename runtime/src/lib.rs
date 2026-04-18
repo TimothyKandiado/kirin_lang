@@ -342,12 +342,12 @@ impl<'a> VM<'a> {
     }
 
     fn jump(&mut self, instruction: Instruction) {
-        let imm = InstructionDecoder::decode_imm19(instruction);
+        let imm = InstructionDecoder::decode_imm19(instruction) as i64;
 
         if imm > 0 {
             self.instruction_ptr += imm as usize - 1;
         } else {
-            self.instruction_ptr -= imm as usize;
+            self.instruction_ptr -= imm.unsigned_abs() as usize + 1;
         }
     }
 

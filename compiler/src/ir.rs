@@ -379,6 +379,15 @@ impl<'a> IrBuilder<'a> {
 
                         self.lower_statement(body);
 
+                        if let Some(last_instruction) = self.get_last_instruction() 
+                        && let IrInstruction::Return {val: _} = last_instruction  {
+                            
+                        } else {
+                            if return_type == &ValueType::Void {
+                                self.push_instruction(IrInstruction::Return { val: None });
+                            }
+                        }
+
                         // remove initial scope
                         self.pop_scope();
 
@@ -471,6 +480,62 @@ impl<'a> IrBuilder<'a> {
                         then_merge_jump_inst_idx,
                     );
                 }
+            }
+
+            Statement::For(for_stmt) => {
+                self.push_scope();
+
+                if let Some(init) = &for_stmt.initializer {
+                    let init_block = self.push_block();
+                    self.lower_statement(init);
+                    self.push_instruction(IrInstruction::Jump { label: init_block + 1 });
+                }
+
+                let mut condition_block_label = None;
+                let mut branch_block_idx = None;
+                let mut branch_inst_idx = None;
+                let mut cond_reg = None;
+
+                if let Some(condition) = &for_stmt.condition {
+                    let label = self.push_block();
+                    condition_block_label = Some(label);
+
+                    let condition_reg = self.lower_expression(condition).expect("condition should return value");
+                    cond_reg = Some(condition_reg);
+
+                    let (block_idx, inst_idx) = self.push_instruction(IrInstruction::Branch { cond: condition_reg, then_label: label + 1, else_label: 0 });
+                    (branch_block_idx, branch_inst_idx) = (Some(block_idx), Some(inst_idx))
+                }
+
+                let loop_body = self.push_block();
+                self.lower_statement(&for_stmt.body);
+
+                let (continue_block_idx, continue_inst_idx) = self.push_instruction(IrInstruction::Jump { label: 0 });
+
+                let footer_label = self.push_block();
+                if let Some(footer) = &for_stmt.footer {
+                    self.lower_statement(footer);
+                }
+
+                self.edit_instruction(IrInstruction::Jump { label: footer_label }, continue_block_idx, continue_inst_idx);
+                
+                if let Some(condition_label) = condition_block_label {
+                    self.push_instruction(IrInstruction::Jump { label: condition_label });
+                } else {
+                    self.push_instruction(IrInstruction::Jump { label: loop_body });
+                }
+
+                let break_label = self.push_block();
+
+                if condition_block_label.is_some() {
+                    self.edit_instruction(
+                        IrInstruction::Branch { cond: cond_reg.unwrap(), then_label: loop_body, else_label: break_label }, 
+                        branch_block_idx.unwrap(), 
+                        branch_inst_idx.unwrap());
+                }
+                
+
+                self.pop_scope();
             }
 
             Statement::VarDecl(var_decl) => {
@@ -653,6 +718,33 @@ impl<'a> IrBuilder<'a> {
             *instruction = inst;
         } else {
             panic!("cannot edit an instruction for native function")
+        }
+    }
+
+    fn get_last_instruction(&self) -> Option<&IrInstruction<'a>> {
+        if self.current_function.is_none() {
+            panic!("cannot get an instruction in global scope")
+        }
+
+        let function = self
+            .functions
+            .get(self.current_function.unwrap())
+            .unwrap();
+
+        if let IrFunction::Bytecode {
+            name: _,
+            params: _,
+            ret_type: _,
+            blocks,
+            reg_count: _,
+            reg_types: _,
+        } = function
+        {
+            let last_block = blocks.last().unwrap();
+
+            last_block.instructions.last()
+        } else {
+            panic!("cannot get an instruction for native function")
         }
     }
 

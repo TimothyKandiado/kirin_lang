@@ -17,7 +17,13 @@ if statements
     x : i64 = 400
 
     if x > 200 {
-        print_str("x > 200")
+        print("x > 200")
     } else {
-        print_str("x <= 200")
+        print("x <= 200")
+    }
+
+loops
+
+    for i := 0; i < 10; i++ {
+        print(i)
     }
