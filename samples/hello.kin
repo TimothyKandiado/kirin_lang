@@ -12,7 +12,7 @@ fn main(): void {
         print_str("x <= 500")
     }
 
-    print_i64(x)
+    print_i64(add(x, -300))
 }
 
 fn add(a: i64, b: i64): i64 {

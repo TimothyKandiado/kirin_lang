@@ -1,22 +1,48 @@
 pub mod native;
 
 use program::{
-    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder,
-    Program, TypeInfo, opcode::*,
+    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder, Program, TypeInfo, debug_print_instruction, opcode::*
 };
 
 use crate::native::NativeFunctionWrapper;
 
 pub type Register = u64;
 
-const FRAME_HEADER_LENGTH: Register = 4;
+const FRAME_HEADER_LENGTH: Register = 3;
+
+#[repr(C, align(8))]
+#[derive(Debug, Copy, Clone)]
+struct FrameHeaderFlags {
+    pub return_register: u8,
+    pub frame_size: u8,
+    pub function_index: u16,
+}
+
+impl FrameHeaderFlags {
+    pub fn new(return_register: u8, frame_size: u8, function_index: u16) -> Self {
+        Self {
+            return_register,
+            frame_size,
+            function_index,
+        }
+    }
+
+    pub fn to_register(&self) -> Register {
+        let bits: Register = unsafe {std::mem::transmute(self)};
+        bits
+    }
+
+    pub fn from_register(register: Register) -> Self {
+        let flags: FrameHeaderFlags = unsafe {std::mem::transmute(register)};
+        flags
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 struct FrameHeader {
     pub return_address: Register,
     pub prev_frame_ptr: Register,
-    pub function_index: Register,
-    pub frame_size: Register,
+    pub flags: FrameHeaderFlags,
 }
 
 pub struct VmContext<'a> {
@@ -100,8 +126,8 @@ impl<'a> VM<'a> {
         while self.is_running {
             let instruction = self.get_next_instruction();
 
-            // print!("[{}] ", self.instruction_ptr - 1);
-            // debug_print_instruction(instruction);
+            print!("[{}] ", self.instruction_ptr - 1);
+            debug_print_instruction(instruction);
 
             self.execute(instruction)?;
         }
@@ -130,7 +156,8 @@ impl<'a> VM<'a> {
 
             OP_CALL => self.call(instruction),
 
-            OP_RET_VOID => self.return_void(),
+            OP_RET_VOID => self.ret_void(),
+            OP_RET => self.ret(instruction),
 
             _ => return Err(format!("unknown opcode {} | {:x} ", opcode, opcode)),
         }
@@ -227,11 +254,21 @@ impl<'a> VM<'a> {
 
         match function_metadata.function_kind {
             FunctionKind::Bytecode => {
-                let _ = self.push_frame(
+                let flags = FrameHeaderFlags::new(
+                    ret_start as u8, 
+                    function_metadata.registers, 
+                    func_index as u16);
+
+                let frame = self.push_frame(
                     function_metadata.code_offset as usize,
-                    func_index as Register,
-                    function_metadata.registers as Register,
+                    flags
                 );
+
+                let arg_start = frame.prev_frame_ptr as usize + FRAME_HEADER_LENGTH as usize + arg_start as usize;
+
+                let param_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize;
+                
+                self.registers.copy_within(arg_start..arg_start+(function_metadata.parameters as usize), param_start);
             }
             FunctionKind::Native => {
                 let native_func = &self.native_functions[function_metadata.code_offset as usize];
@@ -271,25 +308,41 @@ impl<'a> VM<'a> {
         }
     }
 
-    fn return_void(&mut self) {
+    fn ret_void(&mut self) {
+        _ = self.pop_frame();
+    }
+
+    fn ret(&mut self, instruction: Instruction) {
+        let frame_header = self.get_frame_header();
+
+        let function = &self.functions[frame_header.flags.function_index as usize];
+
+        let ret_source_start = InstructionDecoder::decode_const19(instruction) as usize;
+
+        let ret_source_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_source_start as usize;
+        
+        let ret_dest_start = frame_header.prev_frame_ptr + FRAME_HEADER_LENGTH + frame_header.flags.return_register as u64;
+
+        self.registers.copy_within(ret_source_start..(ret_source_start+function.registers as usize), ret_dest_start as usize);
+
         _ = self.pop_frame();
     }
 
     fn push_frame(
         &mut self,
         target_instruction: usize,
-        func_index: Register,
-        func_registers: Register,
+        mut flags: FrameHeaderFlags
     ) -> FrameHeader {
+        flags.frame_size += FRAME_HEADER_LENGTH as u8;
+
         let frame_header = FrameHeader {
             prev_frame_ptr: self.frame_ptr as Register,
             return_address: self.instruction_ptr as Register,
-            function_index: func_index,
-            frame_size: FRAME_HEADER_LENGTH + func_registers,
+            flags,
         };
 
         let current_registers = self.registers.len();
-        let target_registers = current_registers + frame_header.frame_size as usize;
+        let target_registers = current_registers + frame_header.flags.frame_size as usize;
 
         self.instruction_ptr = target_instruction;
         self.frame_ptr = self.registers.len();
@@ -298,38 +351,42 @@ impl<'a> VM<'a> {
 
         self.registers[self.frame_ptr] = frame_header.return_address;
         self.registers[self.frame_ptr + 1] = frame_header.prev_frame_ptr;
-        self.registers[self.frame_ptr + 2] = frame_header.function_index;
-        self.registers[self.frame_ptr + 3] = frame_header.frame_size;
+        self.registers[self.frame_ptr + 2] = frame_header.flags.to_register();
 
         frame_header
     }
 
     fn pop_frame(&mut self) -> FrameHeader {
-        let return_address = self.registers[self.frame_ptr];
-        let prev_frame_ptr = self.registers[self.frame_ptr + 1];
-        let function_index = self.registers[self.frame_ptr + 2];
-        let frame_size = self.registers[self.frame_ptr + 3];
+        let header = self.get_frame_header();
 
-        self.instruction_ptr = return_address as usize;
-        self.frame_ptr = prev_frame_ptr as usize;
+        self.instruction_ptr = header.return_address as usize;
+        self.frame_ptr = header.prev_frame_ptr as usize;
 
         let current_registers = self.registers.len();
-        let target_registers = current_registers - frame_size as usize;
+        let target_registers = current_registers - header.flags.frame_size as usize;
 
         self.registers.resize(target_registers, 0);
 
-        let header = FrameHeader {
-            return_address,
-            prev_frame_ptr,
-            function_index,
-            frame_size,
-        };
-
+        
         if self.registers.len() < FRAME_HEADER_LENGTH as usize {
             self.is_running = false;
         }
 
         header
+    }
+
+    fn get_frame_header(&self) -> FrameHeader {
+        let return_address = self.registers[self.frame_ptr];
+        let prev_frame_ptr = self.registers[self.frame_ptr + 1];
+        let flags = self.registers[self.frame_ptr + 2];
+
+        let flags = FrameHeaderFlags::from_register(flags);
+
+        FrameHeader {
+            return_address,
+            prev_frame_ptr,
+            flags
+        }
     }
 
     #[inline]
