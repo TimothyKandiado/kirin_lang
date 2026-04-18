@@ -126,7 +126,7 @@ impl ProgramBuilder {
             println!("=== Register Allocation ===");
             println!("Total registers: {}", total_registers);
             for (idx, alloc) in reg_allocations.iter().enumerate() {
-                println!("VReg: [{}] ; Allocation: {:?}", idx, alloc)
+                println!("VReg: [{}] ; Allocation: ({})", idx, alloc)
             }
         }
 
@@ -196,9 +196,9 @@ impl ProgramBuilder {
 
                     let instruction = if offset > 1 {
                         InstructionBuilder::new()
-                        .set_opcode(OpCode::Jump)
-                        .set_imm19(offset as i32)
-                        .build()
+                            .set_opcode(OpCode::Jump)
+                            .set_imm19(offset as i32)
+                            .build()
                     } else {
                         InstructionBuilder::new().set_opcode(OpCode::NoOp).build()
                     };

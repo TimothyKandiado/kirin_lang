@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::ir::{Callee, IrFunction, IrInstruction};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Default)]
@@ -6,19 +8,70 @@ struct IrInstCoord {
     pub inst_id: usize,
 }
 
+impl fmt::Display for IrInstCoord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "B{}:I{}", self.block_id, self.inst_id)
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 struct VirtualRegister {
     id: usize,
     size: usize,
     start_use: IrInstCoord,
     end_use: IrInstCoord,
-    group_id: Option<usize>
+    group_id: Option<usize>,
+    start_set: bool,
+}
+
+impl VirtualRegister {
+    pub fn new(id: usize, size: usize) -> Self {
+        Self {
+            id,
+            size,
+            start_use: IrInstCoord::default(),
+            end_use: IrInstCoord::default(),
+            group_id: None,
+            start_set: false,
+        }
+    }
+
+    pub fn set_coord(&mut self, coord: IrInstCoord) {
+        if !self.start_set {
+            self.start_use = coord;
+            self.end_use = coord;
+            self.start_set = true;
+        } else {
+            self.end_use = coord;
+        }
+    }
+}
+
+impl fmt::Display for VirtualRegister {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let group_id = match self.group_id {
+            Some(id) => id.to_string(),
+            None => "_".to_string(),
+        };
+
+        write!(
+            f,
+            "v{} (size: {}, group: {}) lifetime [{} - {}]",
+            self.id, self.size, group_id, self.start_use, self.end_use
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct RegisterAllocation {
     pub offset: usize,
     pub size: usize,
+}
+
+impl fmt::Display for RegisterAllocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "offset: {}, size: {}", self.offset, self.size)
+    }
 }
 
 pub struct RegisterAllocator {
@@ -48,8 +101,6 @@ impl RegisterAllocator {
                 true
             }
         });
-
-        self.merge_adjacent_free_blocks();
     }
 
     fn merge_adjacent_free_blocks(&mut self) {
@@ -84,17 +135,7 @@ impl RegisterAllocator {
     }
 
     fn get_total_registers(&self) -> usize {
-        let mut total = 0usize;
-
-        for (_, alloc, _) in self.active.iter() {
-            total += alloc.size;
-        }
-
-        for (_, size) in self.free_list.iter() {
-            total += *size;
-        }
-
-        total
+        self.next_offset
     }
 
     fn allocate(&mut self, size: usize) -> RegisterAllocation {
@@ -131,7 +172,7 @@ impl RegisterAllocator {
         for &size in sizes {
             allocations.push(RegisterAllocation {
                 offset: current_offset,
-                size
+                size,
             });
 
             current_offset += size
@@ -152,35 +193,29 @@ impl RegisterAllocator {
 
         for v in values.iter() {
             if let Some(last) = grouped_values.last_mut()
-                && last[0].group_id == v.group_id {
-                    last.push(v);
-                    continue;
-                }
+                && last[0].group_id == v.group_id
+            {
+                last.push(v);
+                continue;
+            }
 
             grouped_values.push(vec![v]);
         }
 
         for group in grouped_values.iter() {
-            if group.len() == 1 {
-                let v = group[0];
-
+            for v in group.iter() {
                 alloc.expire_old_intervals(v.start_use);
+            }
 
-                let a = alloc.allocate(v.size);
+            alloc.merge_adjacent_free_blocks();
 
-                alloc.active.push((v.id, a, v.end_use));
-                result[v.id] = a;
-            } else {
-                alloc.expire_old_intervals(group[0].start_use);
+            let sizes: Vec<usize> = group.iter().map(|i| i.size).collect();
 
-                let sizes: Vec<usize> = group.iter().map(|i| {i.size}).collect();
+            let allocations = alloc.allocate_group(&sizes);
 
-                let allocations = alloc.allocate_group(&sizes);
-
-                for (a, v) in allocations.iter().zip(group) {
-                    alloc.active.push((v.id, *a, v.end_use));
-                    result[v.id] = *a;
-                }
+            for (a, v) in allocations.iter().zip(group) {
+                alloc.active.push((v.id, *a, v.end_use));
+                result[v.id] = *a;
             }
         }
 
@@ -204,16 +239,8 @@ impl RegisterAllocator {
         let mut virtual_registers: Vec<VirtualRegister> = reg_types
             .iter()
             .enumerate()
-            .map(|(idx, reg_type)| VirtualRegister {
-                id: idx,
-                size: reg_type.get_size(),
-                start_use: IrInstCoord::default(),
-                end_use: IrInstCoord::default(),
-                group_id: None
-            })
+            .map(|(idx, reg_type)| VirtualRegister::new(idx, reg_type.get_size()))
             .collect();
-
-        let mut started_virtual_registers: Vec<usize> = Vec::new();
 
         let mut current_group_id: usize = 0;
 
@@ -238,26 +265,11 @@ impl RegisterAllocator {
                         rhs,
                         val_type: _,
                     } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
 
-                        if started_virtual_registers.contains(lhs) {
-                            virtual_registers[*lhs].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*lhs].start_use = ir_coord;
-                            started_virtual_registers.push(*lhs);
-                        }
+                        virtual_registers[*lhs].set_coord(ir_coord);
 
-                        if started_virtual_registers.contains(rhs) {
-                            virtual_registers[*rhs].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*rhs].start_use = ir_coord;
-                            started_virtual_registers.push(*lhs);
-                        }
+                        virtual_registers[*rhs].set_coord(ir_coord);
                     }
                     IrInstruction::UnaryOp {
                         dest,
@@ -265,31 +277,16 @@ impl RegisterAllocator {
                         rhs,
                         val_type: _,
                     } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
 
-                        if started_virtual_registers.contains(rhs) {
-                            virtual_registers[*rhs].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*rhs].start_use = ir_coord;
-                            started_virtual_registers.push(*rhs);
-                        }
+                        virtual_registers[*rhs].set_coord(ir_coord);
                     }
                     IrInstruction::Branch {
                         cond,
                         then_label: _,
                         else_label: _,
                     } => {
-                        if started_virtual_registers.contains(cond) {
-                            virtual_registers[*cond].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*cond].start_use = ir_coord;
-                            started_virtual_registers.push(*cond);
-                        }
+                        virtual_registers[*cond].set_coord(ir_coord);
                     }
                     IrInstruction::Call {
                         dest,
@@ -298,97 +295,43 @@ impl RegisterAllocator {
                         val_type: _,
                     } => {
                         if let Some(dest) = dest {
-                            if started_virtual_registers.contains(dest) {
-                                virtual_registers[*dest].end_use = ir_coord;
-                            } else {
-                                virtual_registers[*dest].start_use = ir_coord;
-                                started_virtual_registers.push(*dest);
-                            }
+                            virtual_registers[*dest].set_coord(ir_coord);
                         }
 
                         if let Callee::Indirect(callee) = callee {
-                            if started_virtual_registers.contains(callee) {
-                                virtual_registers[*callee].end_use = ir_coord;
-                            } else {
-                                virtual_registers[*callee].start_use = ir_coord;
-                                started_virtual_registers.push(*callee);
-                            }
+                            virtual_registers[*callee].set_coord(ir_coord);
                         }
 
                         let group_id = get_group_id();
 
                         for arg in args {
-                            if started_virtual_registers.contains(arg) {
-                                virtual_registers[*arg].end_use = ir_coord;
-                                virtual_registers[*arg].group_id = Some(group_id);
-                            } else {
-                                virtual_registers[*arg].start_use = ir_coord;
-                                started_virtual_registers.push(*arg);
-                            }
+                            virtual_registers[*arg].set_coord(ir_coord);
+                            virtual_registers[*arg].group_id = Some(group_id);
                         }
                     }
                     IrInstruction::ConstBool { dest, val: _ } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
                     }
                     IrInstruction::ConstI64 { dest, val: _ } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
                     }
                     IrInstruction::ConstF64 { dest, val: _ } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
                     }
                     IrInstruction::ConstStr { dest, val: _ } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
                     }
                     IrInstruction::Copy { dest, source } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
 
-                        if started_virtual_registers.contains(source) {
-                            virtual_registers[*source].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*source].start_use = ir_coord;
-                            started_virtual_registers.push(*source);
-                        }
+                        virtual_registers[*source].set_coord(ir_coord);
                     }
                     IrInstruction::LoadGlobal { dest, name: _ } => {
-                        if started_virtual_registers.contains(dest) {
-                            virtual_registers[*dest].end_use = ir_coord;
-                        } else {
-                            virtual_registers[*dest].start_use = ir_coord;
-                            started_virtual_registers.push(*dest);
-                        }
+                        virtual_registers[*dest].set_coord(ir_coord);
                     }
                     IrInstruction::Return { val } => {
                         if let Some(val) = val {
-                            if started_virtual_registers.contains(val) {
-                                virtual_registers[*val].end_use = ir_coord;
-                            } else {
-                                virtual_registers[*val].start_use = ir_coord;
-                                started_virtual_registers.push(*val);
-                            }
+                            virtual_registers[*val].set_coord(ir_coord);
                         }
                     }
                     IrInstruction::Jump { label: _ } => {}
@@ -400,7 +343,7 @@ impl RegisterAllocator {
         {
             println!("=== Virtual Register Lifetimes ===");
             for v_reg in virtual_registers.iter() {
-                println!("{:?}", v_reg)
+                println!("{}", v_reg)
             }
         }
 

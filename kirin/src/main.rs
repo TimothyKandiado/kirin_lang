@@ -1,4 +1,7 @@
-use compiler::{ir::lower_ast, lexer::parse_tokens, parser::parse_ast, program::build_program, type_check::TypeChecker};
+use compiler::{
+    ir::lower_ast, lexer::parse_tokens, parser::parse_ast, program::build_program,
+    type_check::TypeChecker,
+};
 use program::{Constant, FunctionKind, Program};
 use runtime::{VM, native::get_native_functions};
 
@@ -17,7 +20,10 @@ fn main() {
     } else if filename.ends_with(".knb") {
         run(filename);
     } else {
-        println!("{} is not valid file, expected '.kin' or '.knb' files", filename);
+        println!(
+            "{} is not valid file, expected '.kin' or '.knb' files",
+            filename
+        );
     }
 }
 
@@ -79,12 +85,10 @@ fn compile_and_run(name: &str) {
             panic!("name for native function does not exist")
         };
 
-        let native_fn_index =
-            native_functions
-                .iter()
-                .position(|f| f.name == name)
-                .unwrap_or_else(|| panic!("native function with name {} does not exist",
-                    name));
+        let native_fn_index = native_functions
+            .iter()
+            .position(|f| f.name == name)
+            .unwrap_or_else(|| panic!("native function with name {} does not exist", name));
 
         function.code_offset = native_fn_index as u32
     }
@@ -111,12 +115,10 @@ fn run(name: &str) {
             panic!("name for native function does not exist")
         };
 
-        let native_fn_index =
-            native_functions
-                .iter()
-                .position(|f| f.name == name)
-                .unwrap_or_else(|| panic!("native function with name {} does not exist",
-                    name));
+        let native_fn_index = native_functions
+            .iter()
+            .position(|f| f.name == name)
+            .unwrap_or_else(|| panic!("native function with name {} does not exist", name));
 
         function.code_offset = native_fn_index as u32
     }
@@ -129,6 +131,9 @@ fn print_help() {
     let version_major: u8 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
     let version_minor: u8 = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
     let version_patch: u8 = env!("CARGO_PKG_VERSION_PATCH").parse().unwrap();
-    println!("Kirin language runtime v{}.{}.{}", version_major, version_minor, version_patch);
+    println!(
+        "Kirin language runtime v{}.{}.{}",
+        version_major, version_minor, version_patch
+    );
     println!("Usage: kirin [file]")
 }

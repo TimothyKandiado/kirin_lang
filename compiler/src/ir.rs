@@ -260,7 +260,6 @@ impl<'a> IrBuilder<'a> {
                                 .lower_expression(arg)
                                 .expect("argument expression should yield a value");
 
-                            
                             args.push(reg);
                         }
 
@@ -277,7 +276,10 @@ impl<'a> IrBuilder<'a> {
                                 let val_type = function_registers[arg].clone();
                                 let reg = self.get_register(val_type);
 
-                                self.push_instruction(IrInstruction::Copy { dest: reg, source: arg });
+                                self.push_instruction(IrInstruction::Copy {
+                                    dest: reg,
+                                    source: arg,
+                                });
 
                                 moved_args.push(reg);
                             }
@@ -538,12 +540,19 @@ impl<'a> IrBuilder<'a> {
             panic!("cannot request a register in global scope")
         }
 
-        let function = self
-            .functions
-            .get(self.current_function.unwrap())
-            .unwrap();
+        let function = self.functions.get(self.current_function.unwrap()).unwrap();
 
-        let IrFunction::Bytecode { name: _, params: _, ret_type: _, blocks: _, reg_count: _, reg_types } = function else {panic!("cannot get registers in a non Bytecode function")};
+        let IrFunction::Bytecode {
+            name: _,
+            params: _,
+            ret_type: _,
+            blocks: _,
+            reg_count: _,
+            reg_types,
+        } = function
+        else {
+            panic!("cannot get registers in a non Bytecode function")
+        };
 
         reg_types.clone()
     }

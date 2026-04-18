@@ -1,7 +1,8 @@
 pub mod native;
 
 use program::{
-    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder, Program, TypeInfo, opcode::*
+    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder,
+    Program, TypeInfo, opcode::*,
 };
 
 #[cfg(debug_assertions)]
@@ -12,7 +13,6 @@ use crate::native::NativeFunctionWrapper;
 pub type Register = u64;
 
 const FRAME_HEADER_LENGTH: Register = 3;
-
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 struct FrameHeaderFlags {
@@ -293,7 +293,6 @@ impl<'a> VM<'a> {
         self.set_i64_in_register(dest, result);
     }
 
-
     // comparisons
     fn cmp_le_i64(&mut self, instruction: Instruction) {
         let src1 = InstructionDecoder::decode_src1(instruction);
@@ -363,20 +362,23 @@ impl<'a> VM<'a> {
         match function_metadata.function_kind {
             FunctionKind::Bytecode => {
                 let flags = FrameHeaderFlags::new(
-                    ret_start as u8, 
-                    function_metadata.registers, 
-                    func_index as u16);
-
-                let frame = self.push_frame(
-                    function_metadata.code_offset as usize,
-                    flags
+                    ret_start as u8,
+                    function_metadata.registers,
+                    func_index as u16,
                 );
 
-                let arg_start = frame.prev_frame_ptr as usize + FRAME_HEADER_LENGTH as usize + arg_start as usize;
+                let frame = self.push_frame(function_metadata.code_offset as usize, flags);
+
+                let arg_start = frame.prev_frame_ptr as usize
+                    + FRAME_HEADER_LENGTH as usize
+                    + arg_start as usize;
 
                 let param_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize;
-                
-                self.registers.copy_within(arg_start..arg_start+(function_metadata.parameters as usize), param_start);
+
+                self.registers.copy_within(
+                    arg_start..arg_start + (function_metadata.parameters as usize),
+                    param_start,
+                );
             }
             FunctionKind::Native => {
                 let native_func = &self.native_functions[function_metadata.code_offset as usize];
@@ -386,7 +388,8 @@ impl<'a> VM<'a> {
                 let args =
                     &self.registers[arg_start..(arg_start + function_metadata.parameters as usize)];
 
-                let mut return_slots: Vec<Register> = vec![0; function_metadata.return_args as usize];
+                let mut return_slots: Vec<Register> =
+                    vec![0; function_metadata.return_args as usize];
 
                 let mut ctx = VmContext {
                     constants: self.constants,
@@ -428,10 +431,15 @@ impl<'a> VM<'a> {
         let ret_source_start = InstructionDecoder::decode_const19(instruction) as usize;
 
         let ret_source_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_source_start;
-        
-        let ret_dest_start = frame_header.prev_frame_ptr + FRAME_HEADER_LENGTH + frame_header.flags.return_register as u64;
 
-        self.registers.copy_within(ret_source_start..(ret_source_start+function.return_args as usize), ret_dest_start as usize);
+        let ret_dest_start = frame_header.prev_frame_ptr
+            + FRAME_HEADER_LENGTH
+            + frame_header.flags.return_register as u64;
+
+        self.registers.copy_within(
+            ret_source_start..(ret_source_start + function.return_args as usize),
+            ret_dest_start as usize,
+        );
 
         _ = self.pop_frame();
     }
@@ -439,7 +447,7 @@ impl<'a> VM<'a> {
     fn push_frame(
         &mut self,
         target_instruction: usize,
-        mut flags: FrameHeaderFlags
+        mut flags: FrameHeaderFlags,
     ) -> FrameHeader {
         flags.frame_size += FRAME_HEADER_LENGTH as u8;
 
@@ -475,7 +483,6 @@ impl<'a> VM<'a> {
 
         self.registers.resize(target_registers, 0);
 
-        
         if self.registers.len() < FRAME_HEADER_LENGTH as usize {
             self.is_running = false;
         }
@@ -493,7 +500,7 @@ impl<'a> VM<'a> {
         FrameHeader {
             return_address,
             prev_frame_ptr,
-            flags
+            flags,
         }
     }
 

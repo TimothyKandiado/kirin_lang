@@ -2,7 +2,8 @@ use program::Constant;
 
 use crate::{Register, VmContext, VmError};
 
-pub type NativeFunc = fn(ctx: &mut VmContext<'_>, args: &[Register], ret: &mut [Register]) -> Result<(), VmError>;
+pub type NativeFunc =
+    fn(ctx: &mut VmContext<'_>, args: &[Register], ret: &mut [Register]) -> Result<(), VmError>;
 
 pub struct NativeFunctionWrapper {
     pub name: &'static str,

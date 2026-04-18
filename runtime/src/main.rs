@@ -19,12 +19,10 @@ fn main() {
             panic!("name for native function does not exist")
         };
 
-        let native_fn_index =
-            native_functions
-                .iter()
-                .position(|f| f.name == name)
-                .unwrap_or_else(|| panic!("native function with name {} does not exist",
-                    name));
+        let native_fn_index = native_functions
+            .iter()
+            .position(|f| f.name == name)
+            .unwrap_or_else(|| panic!("native function with name {} does not exist", name));
 
         function.code_offset = native_fn_index as u32
     }
