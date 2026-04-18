@@ -1,5 +1,5 @@
-mod instruction;
 mod debug;
+mod instruction;
 
 pub mod opcode;
 
@@ -11,12 +11,12 @@ use std::io::Write;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
+pub use debug::{debug_print_instruction, debug_program};
 pub use instruction::Instruction;
-pub use instruction::InstructionDecoder;
 pub use instruction::InstructionBuilder;
-pub use debug::debug_program;
+pub use instruction::InstructionDecoder;
 
-pub const BYTECODE_VERSION: u16 = 1;
+pub const BYTECODE_VERSION: u16 = 2;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Constant {
@@ -34,7 +34,7 @@ impl Constant {
         match self {
             Constant::I64(_) => CONST_I64_DISCRIMINANT,
             Constant::F64(_) => CONST_F64_DISCRIMINANT,
-            Constant::String(_) => CONST_STRING_DISCRIMINANT
+            Constant::String(_) => CONST_STRING_DISCRIMINANT,
         }
     }
 }
@@ -54,9 +54,10 @@ pub struct FunctionMetadata {
     pub code_length: u16,
     pub registers: u8,
     pub parameters: u8,
+    pub return_args: u8,
 }
 
-const FUNCTION_METADATA_SIZE: usize = 11;
+const FUNCTION_METADATA_SIZE: usize = 12;
 
 impl FunctionMetadata {
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -68,6 +69,7 @@ impl FunctionMetadata {
         buffer.write_u16::<LittleEndian>(self.code_length).unwrap();
         buffer.write_u8(self.registers).unwrap();
         buffer.write_u8(self.parameters).unwrap();
+        buffer.write_u8(self.return_args).unwrap();
 
         assert!(buffer.len() == FUNCTION_METADATA_SIZE);
 
@@ -83,21 +85,23 @@ impl FunctionMetadata {
         let code_length = cursor.read_u16::<LittleEndian>()?;
         let registers = cursor.read_u8()?;
         let parameters = cursor.read_u8()?;
+        let return_args = cursor.read_u8()?;
 
         let function_kind = match function_kind {
             x if x == FunctionKind::Native as u8 => FunctionKind::Native,
             x if x == FunctionKind::Bytecode as u8 => FunctionKind::Bytecode,
 
-            _ => return Err(format!("{} if not a valid function kind", function_kind).into())
+            _ => return Err(format!("{} if not a valid function kind", function_kind).into()),
         };
 
-        return Ok(FunctionMetadata { 
-            name_idx, 
-            function_kind, 
-            code_offset, 
-            code_length, 
-            registers, 
-            parameters 
+        Ok(FunctionMetadata {
+            name_idx,
+            function_kind,
+            code_offset,
+            code_length,
+            registers,
+            parameters,
+            return_args,
         })
     }
 }
@@ -136,7 +140,12 @@ pub struct ProgramHeader {
 const MAGIC_NUMBER_SIZE: usize = 12;
 
 impl ProgramHeader {
-    pub fn new(instruction_count: u32, constant_count: u16, function_count: u16, type_count: u16) -> Self {
+    pub fn new(
+        instruction_count: u32,
+        constant_count: u16,
+        function_count: u16,
+        type_count: u16,
+    ) -> Self {
         let magic_number: [u8; MAGIC_NUMBER_SIZE] = *b"kirinprogram";
 
         let version_major: u8 = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
@@ -155,7 +164,7 @@ impl ProgramHeader {
             instruction_count,
             constant_count,
             function_count,
-            type_count
+            type_count,
         }
     }
 
@@ -164,14 +173,22 @@ impl ProgramHeader {
 
         buffer.write_all(&self.magic_number).unwrap();
 
-        buffer.write_u16::<LittleEndian>(self.bytecode_version).unwrap();
+        buffer
+            .write_u16::<LittleEndian>(self.bytecode_version)
+            .unwrap();
         buffer.write_u8(self.version_major).unwrap();
         buffer.write_u8(self.version_minor).unwrap();
         buffer.write_u8(self.version_patch).unwrap();
 
-        buffer.write_u32::<LittleEndian>(self.instruction_count).unwrap();
-        buffer.write_u16::<LittleEndian>(self.constant_count).unwrap();
-        buffer.write_u16::<LittleEndian>(self.function_count).unwrap();
+        buffer
+            .write_u32::<LittleEndian>(self.instruction_count)
+            .unwrap();
+        buffer
+            .write_u16::<LittleEndian>(self.constant_count)
+            .unwrap();
+        buffer
+            .write_u16::<LittleEndian>(self.function_count)
+            .unwrap();
         buffer.write_u16::<LittleEndian>(self.type_count).unwrap();
 
         assert!(buffer.len() < PROGRAM_HEADER_SIZE);
@@ -196,25 +213,20 @@ impl ProgramHeader {
         let function_count = data.read_u16::<LittleEndian>()?;
         let type_count = data.read_u16::<LittleEndian>()?;
 
+        Ok(Self {
+            magic_number,
+            bytecode_version,
 
-        Ok(
-            Self {
-                magic_number,
-                bytecode_version,
+            version_major,
+            version_minor,
+            version_patch,
 
-                version_major,
-                version_minor,
-                version_patch,
-
-                instruction_count,
-                constant_count,
-                function_count,
-                type_count
-            }
-        )
+            instruction_count,
+            constant_count,
+            function_count,
+            type_count,
+        })
     }
-
-    
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -243,10 +255,10 @@ impl Program {
 
     pub fn write_bytes<W: Write>(&self, buffer: &mut W) {
         let header = ProgramHeader::new(
-            self.instructions.len() as u32, 
-            self.constants.len() as u16, 
-            self.functions.len() as u16, 
-            self.types.len() as u16
+            self.instructions.len() as u32,
+            self.constants.len() as u16,
+            self.functions.len() as u16,
+            self.types.len() as u16,
         );
 
         buffer.write_all(&header.to_bytes()).unwrap();
@@ -275,7 +287,7 @@ impl Program {
         // functions
         for function in self.functions.iter() {
             buffer.write_all(&function.to_bytes()).unwrap()
-        } 
+        }
 
         // types
         for type_info in self.types.iter() {
@@ -284,8 +296,10 @@ impl Program {
         }
     }
 
-    pub fn read_from_bytes<R: Read>(mut source: R) -> Result<Program, Box<dyn Error>> {
+    pub fn read_from_bytes(data: &[u8]) -> Result<Program, Box<dyn Error>> {
         let mut program = Program::new();
+
+        let mut source = Cursor::new(data);
 
         let mut header_buffer = [0u8; PROGRAM_HEADER_SIZE];
         source.read_exact(&mut header_buffer)?;
@@ -305,33 +319,33 @@ impl Program {
                 CONST_I64_DISCRIMINANT => {
                     let val = source.read_i64::<LittleEndian>()?;
                     program.constants.push(Constant::I64(val));
-                },
+                }
                 CONST_F64_DISCRIMINANT => {
                     let val = source.read_f64::<LittleEndian>()?;
                     program.constants.push(Constant::F64(val));
-                },
+                }
                 CONST_STRING_DISCRIMINANT => {
                     let size = source.read_u64::<LittleEndian>()?;
 
-                    let mut buffer = Vec::new();
-                    buffer.resize(size as usize, 0u8);
+                    let mut buffer = vec![0; size as usize];
 
                     source.read_exact(&mut buffer)?;
                     let string = str::from_utf8(&buffer)?.to_string();
 
                     program.constants.push(Constant::String(string));
-                    
-                },
+                }
 
                 _ => {
-                    return Err(format!("{} is not a valid constant discriminant", discriminant).into())
+                    return Err(
+                        format!("{} is not a valid constant discriminant", discriminant).into(),
+                    );
                 }
             }
         }
 
         for _ in 0..header.function_count {
             let mut buffer = [0u8; FUNCTION_METADATA_SIZE];
-            
+
             source.read_exact(&mut buffer)?;
 
             let function = FunctionMetadata::from_bytes(&buffer)?;
@@ -349,10 +363,10 @@ impl Program {
                 x if x == TypeKind::F64 as u8 => TypeKind::F64,
                 x if x == TypeKind::String as u8 => TypeKind::String,
 
-                _ => return Err(format!("{} is not a valid type kind", kind).into())
+                _ => return Err(format!("{} is not a valid type kind", kind).into()),
             };
 
-            let type_info = TypeInfo {kind, size};
+            let type_info = TypeInfo { kind, size };
             program.types.push(type_info);
         }
 

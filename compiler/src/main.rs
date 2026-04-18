@@ -1,16 +1,11 @@
 use compiler::{
-    ir::lower_ast,
-    ir_debug::debug_ir_module,
-    lexer::parse_tokens,
-    parser::parse_ast,
-    program::{build_program},
-    type_check::TypeChecker,
+    ir::lower_ast, ir_debug::debug_ir_module, lexer::parse_tokens, parser::parse_ast,
+    program::build_program, type_check::TypeChecker,
 };
 use program::debug_program;
 
 fn main() {
     let source = std::fs::read_to_string("../samples/hello.kin").unwrap();
-    
 
     let results = parse_tokens(&source);
 

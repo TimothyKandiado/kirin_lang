@@ -5,7 +5,6 @@ pub use code_gen::build_program;
 
 use crate::parser::ValueType;
 
-
 // get size of a type in registers, a register is 64bits
 impl ValueType {
     pub fn get_size(&self) -> usize {

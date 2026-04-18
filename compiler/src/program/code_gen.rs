@@ -6,9 +6,7 @@ use crate::{
     instruction::{Instruction, InstructionBuilder, InstructionDecoder, OpCode},
     ir::{Callee, IrBlock, IrFunction, IrInstruction, IrModule},
     parser::{BinaryExprOp, UnaryExprOp, ValueType},
-    program::{
-        register_allocation::{RegisterAllocation, RegisterAllocator},
-    },
+    program::register_allocation::{RegisterAllocation, RegisterAllocator},
 };
 
 enum InstrJump {
@@ -47,7 +45,7 @@ impl ProgramBuilder {
                 IrFunction::Bytecode {
                     name,
                     params,
-                    ret_type: _,
+                    ret_type,
                     blocks: _,
                     reg_count: _,
                     reg_types: _,
@@ -61,7 +59,11 @@ impl ProgramBuilder {
                         code_offset: 0,
                         function_kind: FunctionKind::Bytecode,
                         registers: 0,
-                        parameters: params.len() as u8,
+                        parameters: params
+                            .iter()
+                            .map(|p| p.value_type.get_size())
+                            .sum::<usize>() as u8,
+                        return_args: ret_type.get_size() as u8,
                     };
 
                     self.functions.push(func_metadata);
@@ -69,7 +71,7 @@ impl ProgramBuilder {
                 IrFunction::Native {
                     name,
                     params,
-                    ret_type: _,
+                    ret_type,
                 } => {
                     let constant = Constant::String(name.to_string());
                     let name_idx = self.push_constant(constant) as u16;
@@ -80,7 +82,11 @@ impl ProgramBuilder {
                         code_offset: 0,
                         function_kind: FunctionKind::Native,
                         registers: 0,
-                        parameters: params.len() as u8,
+                        parameters: params
+                            .iter()
+                            .map(|p| p.value_type.get_size())
+                            .sum::<usize>() as u8,
+                        return_args: ret_type.get_size() as u8,
                     };
 
                     self.functions.push(func_metadata);
@@ -575,7 +581,7 @@ impl ProgramBuilder {
                     let dest = if let Some(dest) = dest { dest } else { &0 };
                     let dest = reg_allocations[*dest].offset as u32;
 
-                    let param_start = args.get(0).unwrap_or_else(|| &0);
+                    let param_start = args.first().unwrap_or(&0);
                     let param_start = reg_allocations[*param_start].offset as u32;
 
                     match callee {

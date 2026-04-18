@@ -1,6 +1,5 @@
 pub type Instruction = u32;
 
-
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum OpCode {
