@@ -130,8 +130,8 @@ impl<'a> VM<'a> {
         while self.is_running {
             let instruction = self.get_next_instruction();
 
-            print!("[{}] ", self.instruction_ptr - 1);
-            debug_print_instruction(instruction);
+            // print!("[{}] ", self.instruction_ptr - 1);
+            // debug_print_instruction(instruction);
 
             self.execute(instruction)?;
         }

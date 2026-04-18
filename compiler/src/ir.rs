@@ -259,8 +259,32 @@ impl<'a> IrBuilder<'a> {
                             let reg = self
                                 .lower_expression(arg)
                                 .expect("argument expression should yield a value");
+
+                            
                             args.push(reg);
                         }
+
+                        fn is_sequential(v: &Vec<usize>) -> bool {
+                            v.windows(2).all(|w| w[1] == w[0] + 1)
+                        }
+
+                        if !is_sequential(&args) {
+                            let mut moved_args = Vec::new();
+
+                            let function_registers = self.get_allocated_registers();
+
+                            for arg in args {
+                                let val_type = function_registers[arg].clone();
+                                let reg = self.get_register(val_type);
+
+                                self.push_instruction(IrInstruction::Copy { dest: reg, source: arg });
+
+                                moved_args.push(reg);
+                            }
+
+                            args = moved_args;
+                        }
+
                         let dest = self.get_register(call.value_type.clone());
 
                         self.push_instruction(IrInstruction::Call {
@@ -507,6 +531,21 @@ impl<'a> IrBuilder<'a> {
         } else {
             panic!("cannot allocate registers for native function")
         }
+    }
+
+    fn get_allocated_registers(&self) -> Vec<ValueType> {
+        if self.current_function.is_none() {
+            panic!("cannot request a register in global scope")
+        }
+
+        let function = self
+            .functions
+            .get(self.current_function.unwrap())
+            .unwrap();
+
+        let IrFunction::Bytecode { name: _, params: _, ret_type: _, blocks: _, reg_count: _, reg_types } = function else {panic!("cannot get registers in a non Bytecode function")};
+
+        return reg_types.clone()
     }
 
     fn push_block(&mut self) -> Label {
