@@ -264,7 +264,7 @@ impl<'a> IrBuilder<'a> {
                             args.push(reg);
                         }
 
-                        fn is_sequential(v: &Vec<usize>) -> bool {
+                        fn is_sequential(v: &[usize]) -> bool {
                             v.windows(2).all(|w| w[1] == w[0] + 1)
                         }
 
@@ -545,7 +545,7 @@ impl<'a> IrBuilder<'a> {
 
         let IrFunction::Bytecode { name: _, params: _, ret_type: _, blocks: _, reg_count: _, reg_types } = function else {panic!("cannot get registers in a non Bytecode function")};
 
-        return reg_types.clone()
+        reg_types.clone()
     }
 
     fn push_block(&mut self) -> Label {

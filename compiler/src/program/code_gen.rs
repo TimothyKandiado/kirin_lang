@@ -121,10 +121,13 @@ impl ProgramBuilder {
             return;
         };
 
-        println!("=== Register Allocation ===");
-        println!("Total registers: {}", total_registers);
-        for (idx, alloc) in reg_allocations.iter().enumerate() {
-            println!("VReg: [{}] ; Allocation: {:?}", idx, alloc)
+        #[cfg(debug_assertions)]
+        {
+            println!("=== Register Allocation ===");
+            println!("Total registers: {}", total_registers);
+            for (idx, alloc) in reg_allocations.iter().enumerate() {
+                println!("VReg: [{}] ; Allocation: {:?}", idx, alloc)
+            }
         }
 
         // (label, instruction_idx)

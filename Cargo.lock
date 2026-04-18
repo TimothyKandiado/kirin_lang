@@ -16,6 +16,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kirin"
+version = "0.1.0"
+dependencies = [
+ "compiler",
+ "program",
+ "runtime",
+]
+
+[[package]]
 name = "program"
 version = "0.1.0"
 dependencies = [

@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "compiler", "program", 
+    "compiler", "kirin", "program", 
     "runtime"
     ]
 resolver = "3"

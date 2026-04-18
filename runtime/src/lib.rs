@@ -1,8 +1,11 @@
 pub mod native;
 
 use program::{
-    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder, Program, TypeInfo, debug_print_instruction, opcode::*
+    Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder, Program, TypeInfo, opcode::*
 };
+
+#[cfg(debug_assertions)]
+use program::debug_print_instruction;
 
 use crate::native::NativeFunctionWrapper;
 
@@ -130,8 +133,11 @@ impl<'a> VM<'a> {
         while self.is_running {
             let instruction = self.get_next_instruction();
 
-            // print!("[{}] ", self.instruction_ptr - 1);
-            // debug_print_instruction(instruction);
+            #[cfg(debug_assertions)]
+            {
+                print!("[{}] ", self.instruction_ptr - 1);
+                debug_print_instruction(instruction);
+            }
 
             self.execute(instruction)?;
         }
@@ -421,7 +427,7 @@ impl<'a> VM<'a> {
 
         let ret_source_start = InstructionDecoder::decode_const19(instruction) as usize;
 
-        let ret_source_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_source_start as usize;
+        let ret_source_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_source_start;
         
         let ret_dest_start = frame_header.prev_frame_ptr + FRAME_HEADER_LENGTH + frame_header.flags.return_register as u64;
 

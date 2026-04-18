@@ -151,12 +151,11 @@ impl RegisterAllocator {
         let mut grouped_values: Vec<Vec<&VirtualRegister>> = Vec::new();
 
         for v in values.iter() {
-            if let Some(last) = grouped_values.last_mut() {
-                if last[0].group_id == v.group_id {
+            if let Some(last) = grouped_values.last_mut()
+                && last[0].group_id == v.group_id {
                     last.push(v);
                     continue;
                 }
-            }
 
             grouped_values.push(vec![v]);
         }
@@ -221,7 +220,7 @@ impl RegisterAllocator {
         let mut get_group_id = move || {
             current_group_id += 1;
 
-            return current_group_id - 1;
+            current_group_id - 1
         };
 
         for (block_idx, block) in blocks.iter().enumerate() {
@@ -397,9 +396,12 @@ impl RegisterAllocator {
             }
         }
 
-        println!("=== Virtual Register Lifetimes ===");
-        for v_reg in virtual_registers.iter() {
-            println!("{:?}", v_reg)
+        #[cfg(debug_assertions)]
+        {
+            println!("=== Virtual Register Lifetimes ===");
+            for v_reg in virtual_registers.iter() {
+                println!("{:?}", v_reg)
+            }
         }
 
         RegisterAllocator::run_allocation(&mut virtual_registers)
