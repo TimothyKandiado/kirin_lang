@@ -159,9 +159,17 @@ impl<'a> Parser<'a> {
 
         match current_char {
             '+' => {
+                if self.peek().is_ascii_digit() {
+                    self.scan_number();
+                    return;
+                }
                 self.emit_current_simple_token(TokenKind::Plus);
             }
             '-' => {
+                if self.peek().is_ascii_digit() {
+                    self.scan_number();
+                    return;
+                }
                 self.emit_current_simple_token(TokenKind::Minus);
             }
             '/' => {

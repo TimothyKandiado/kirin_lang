@@ -10,8 +10,8 @@ pub type Register = u64;
 
 const FRAME_HEADER_LENGTH: Register = 3;
 
-#[repr(C, align(8))]
-#[derive(Debug, Copy, Clone)]
+
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 struct FrameHeaderFlags {
     pub return_register: u8,
     pub frame_size: u8,
@@ -27,14 +27,20 @@ impl FrameHeaderFlags {
         }
     }
 
-    pub fn to_register(&self) -> Register {
-        let bits: Register = unsafe {std::mem::transmute(self)};
-        bits
+    #[inline(always)]
+    pub fn to_register(self) -> u64 {
+        (self.return_register as u64)
+            | ((self.frame_size as u64) << 8)
+            | ((self.function_index as u64) << 16)
     }
 
-    pub fn from_register(register: Register) -> Self {
-        let flags: FrameHeaderFlags = unsafe {std::mem::transmute(register)};
-        flags
+    #[inline(always)]
+    pub fn from_register(reg: u64) -> Self {
+        Self {
+            return_register: (reg & 0xFF) as u8,
+            frame_size: ((reg >> 8) & 0xFF) as u8,
+            function_index: ((reg >> 16) & 0xFFFF) as u16,
+        }
     }
 }
 
@@ -71,8 +77,6 @@ pub struct VM<'a> {
 
 impl<'a> VM<'a> {
     pub fn new(program: &'a Program, native_functions: &'a [NativeFunctionWrapper]) -> Self {
-        
-
         VM {
             registers: Vec::new(),
             instruction_ptr: 0,
@@ -146,6 +150,14 @@ impl<'a> VM<'a> {
 
             OP_MOVE => self.move_inst(instruction),
 
+            OP_ADD_I64 => self.add_i64(instruction),
+            OP_SUB_I64 => self.sub_i64(instruction),
+            OP_MUL_I64 => self.mul_i64(instruction),
+            OP_DIV_I64 => self.div_i64(instruction),
+            OP_MOD_I64 => self.mod_i64(instruction),
+            OP_POW_I64 => self.pow_i64(instruction),
+            OP_NEG_I64 => self.neg_i64(instruction),
+
             OP_CMP_LE_I64 => self.cmp_le_i64(instruction),
             OP_CMP_LT_I64 => self.cmp_lt_i64(instruction),
 
@@ -187,6 +199,96 @@ impl<'a> VM<'a> {
         self.set_register(dest, source_value);
     }
 
+    // arithmetic
+    fn add_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1);
+        let val2 = self.get_i64_in_register(src2);
+
+        let result = val1 + val2;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn sub_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1);
+        let val2 = self.get_i64_in_register(src2);
+
+        let result = val1 - val2;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn mul_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1);
+        let val2 = self.get_i64_in_register(src2);
+
+        let result = val1 * val2;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn div_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1);
+        let val2 = self.get_i64_in_register(src2);
+
+        let result = val1 / val2;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn mod_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1);
+        let val2 = self.get_i64_in_register(src2);
+
+        let result = val1 % val2;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn pow_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let src2 = InstructionDecoder::decode_src2(instruction);
+
+        let val1 = self.get_i64_in_register(src1) as f64;
+        let val2 = self.get_i64_in_register(src2) as f64;
+
+        let result = val1.powf(val2) as i64;
+        let dest = InstructionDecoder::decode_dest(instruction);
+
+        self.set_i64_in_register(dest, result);
+    }
+
+    fn neg_i64(&mut self, instruction: Instruction) {
+        let src1 = InstructionDecoder::decode_src1(instruction);
+        let val1 = self.get_i64_in_register(src1);
+        let result = -val1;
+
+        let dest = InstructionDecoder::decode_dest(instruction);
+        self.set_i64_in_register(dest, result);
+    }
+
+
+    // comparisons
     fn cmp_le_i64(&mut self, instruction: Instruction) {
         let src1 = InstructionDecoder::decode_src1(instruction);
         let src2 = InstructionDecoder::decode_src2(instruction);
@@ -323,7 +425,7 @@ impl<'a> VM<'a> {
         
         let ret_dest_start = frame_header.prev_frame_ptr + FRAME_HEADER_LENGTH + frame_header.flags.return_register as u64;
 
-        self.registers.copy_within(ret_source_start..(ret_source_start+function.registers as usize), ret_dest_start as usize);
+        self.registers.copy_within(ret_source_start..(ret_source_start+function.return_args as usize), ret_dest_start as usize);
 
         _ = self.pop_frame();
     }
@@ -414,5 +516,21 @@ impl<'a> VM<'a> {
         self.instruction_ptr += 1;
 
         self.instructions[self.instruction_ptr - 1]
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::FrameHeaderFlags;
+
+    #[test]
+    fn test_frame_header_flags_encoding() {
+        let original_flags = FrameHeaderFlags::new(2, 20, 44);
+
+        let encoded_flags = original_flags.to_register();
+
+        let decoded_flags = FrameHeaderFlags::from_register(encoded_flags);
+
+        assert_eq!(original_flags, decoded_flags)
     }
 }
