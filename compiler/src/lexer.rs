@@ -67,6 +67,7 @@ pub enum TokenKind {
     NewLine,
     Colon,
     Comma,
+    Semicolon,
 
     Eof,
 }
@@ -235,7 +236,7 @@ impl<'a> Parser<'a> {
             }
             ':' => self.emit_current_simple_token(TokenKind::Colon),
             ',' => self.emit_current_simple_token(TokenKind::Comma),
-
+            ';' => self.emit_current_simple_token(TokenKind::Semicolon),
             '"' => self.scan_string(),
 
             x if x.is_ascii_digit() => self.scan_number(),
