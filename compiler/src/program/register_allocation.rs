@@ -94,7 +94,7 @@ impl RegisterAllocator {
 
     fn expire_old_intervals(&mut self, current_start: IrInstCoord) {
         self.active.retain(|(_vreg, alloc, end)| {
-            if *end <= current_start {
+            if *end < current_start {
                 self.free_list.push((alloc.offset, alloc.size));
                 false
             } else {
@@ -193,11 +193,12 @@ impl RegisterAllocator {
 
         for v in values.iter() {
             if let Some(last) = grouped_values.last_mut()
-                && last[0].group_id == v.group_id
-            {
-                last.push(v);
-                continue;
-            }
+                && let (Some(last_group), Some(current_group)) = (last[0].group_id, v.group_id)
+                    && last_group == current_group
+                {
+                    last.push(v);
+                    continue;
+                }
 
             grouped_values.push(vec![v]);
         }
