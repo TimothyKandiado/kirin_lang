@@ -82,3 +82,8 @@ Opcode (7bits) | ret_reg (6bits) | arg_reg (6bits) | func_index (13)
 ### Function call
 
 - CALL ret_reg arg_reg func_index
+
+### Boxing
+
+- BOX dest src1 typeid
+- UNBOX dest src1 typeid

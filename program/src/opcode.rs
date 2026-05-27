@@ -30,11 +30,15 @@ pub const OP_OR: u8 = 0x15;
 pub const OP_BR_FALSE: u8 = 0x16;
 pub const OP_JUMP: u8 = 0x17;
 
-pub const OP_CALL: u8 = 0x18;
-pub const OP_INVOKE: u8 = 0x19;
-pub const OP_RET: u8 = 0x1A;
-pub const OP_RET_VOID: u8 = 0x1B;
-pub const OP_HALT: u8 = 0x1C;
+pub const OP_BOX: u8 = 0x18;
+pub const OP_UNBOX: u8 = 0x19;
+
+pub const OP_CALL: u8 = 0x1A;   // direct call
+pub const OP_INVOKE: u8 = 0x1B; // indirect call
+pub const OP_RET: u8 = 0x1C;
+pub const OP_RET_VOID: u8 = 0x1D;
+pub const OP_HALT: u8 = 0x1E;
+
 
 pub fn opcode_name(op: u8) -> &'static str {
     match op {
@@ -69,6 +73,9 @@ pub fn opcode_name(op: u8) -> &'static str {
 
         OP_BR_FALSE => "OP_BR_FALSE",
         OP_JUMP => "OP_JUMP",
+
+        OP_BOX => "OP_BOX",
+        OP_UNBOX => "OP_UNBOX",
 
         OP_CALL => "OP_CALL",
         OP_INVOKE => "OP_INVOKE",

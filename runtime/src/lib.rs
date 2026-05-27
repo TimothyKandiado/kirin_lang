@@ -385,29 +385,35 @@ impl<'a> VM<'a> {
 
                 let arg_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + arg_start as usize;
 
-                let args =
-                    &self.registers[arg_start..(arg_start + function_metadata.parameters as usize)];
+                let ret_start =
+                    self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_start as usize;
 
-                let mut return_slots: Vec<Register> =
-                    vec![0; function_metadata.return_args as usize];
+                let (argument_slots, mut return_slots) = if ret_start >= arg_start + function_metadata.parameters as usize {
+                    let (arg_slice, ret_slice) = self.registers.split_at_mut(ret_start);
+
+                    let argument_slots = &arg_slice[arg_start..(arg_start + function_metadata.parameters as usize)];
+                    let return_slots = &mut ret_slice[0..function_metadata.return_args as usize];
+
+                    (argument_slots, return_slots)
+                } else {
+                    let (ret_slice, arg_slice) = self.registers.split_at_mut(arg_start);
+
+                    let return_slots = &mut ret_slice[arg_start..(arg_start + function_metadata.parameters as usize)];
+                    let argument_slots = &arg_slice[0..function_metadata.return_args as usize];
+
+                    (argument_slots, return_slots)
+                };
+
 
                 let mut ctx = VmContext {
                     constants: self.constants,
                 };
 
-                let result = (native_func.function)(&mut ctx, args, &mut return_slots);
+                let result = (native_func.function)(&mut ctx, argument_slots, &mut return_slots);
 
                 match result {
-                    Ok(_) => {
-                        if !return_slots.is_empty() {
-                            let ret_start =
-                                self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_start as usize;
+                    Ok(_) => {}
 
-                            self.registers
-                                [ret_start..(ret_start + function_metadata.return_args as usize)]
-                                .copy_from_slice(&return_slots);
-                        }
-                    }
                     Err(err) => {
                         println!(
                             "Error while executing native func: {} : \n{:?}",

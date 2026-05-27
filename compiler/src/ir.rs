@@ -62,6 +62,18 @@ pub enum IrInstruction<'a> {
         val_type: ValueType,
     },
 
+    Box {
+        dest: Reg,
+        src: Reg,
+        val_type: ValueType,
+    },
+
+    Unbox {
+        dest: Reg,
+        src: Reg,
+        val_type: ValueType,
+    },
+
     Call {
         dest: Option<Reg>,
         callee: Callee<'a>,
@@ -323,6 +335,22 @@ impl<'a> IrBuilder<'a> {
 
                 Some(dest)
             }
+            Expression::Box(box_expr) => {
+                let src = self.lower_expression(&box_expr.value).expect("expected value to box");
+                let dest = self.get_register(ValueType::Any);
+
+                self.push_instruction(IrInstruction::Box { dest, src, val_type: box_expr.value.get_value_type() });
+
+                Some(dest)
+            },
+            Expression::Unbox(unbox_expr) => {
+                let src = self.lower_expression(&unbox_expr.value).expect("expected value to unbox");
+                let dest = self.get_register(unbox_expr.value_type.clone());
+
+                self.push_instruction(IrInstruction::Unbox { dest, src, val_type: unbox_expr.value_type.clone() });
+
+                Some(dest)
+            },
         }
     }
 

@@ -336,6 +336,16 @@ impl RegisterAllocator {
                         }
                     }
                     IrInstruction::Jump { label: _ } => {}
+                    IrInstruction::Box { dest, src, val_type: _ } => {
+                        virtual_registers[*dest].set_coord(ir_coord);
+
+                        virtual_registers[*src].set_coord(ir_coord);
+                    },
+                    IrInstruction::Unbox { dest, src, val_type: _ } => {
+                        virtual_registers[*dest].set_coord(ir_coord);
+
+                        virtual_registers[*src].set_coord(ir_coord);
+                    },
                 }
             }
         }

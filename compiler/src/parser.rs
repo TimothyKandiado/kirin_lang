@@ -12,6 +12,8 @@ pub enum Expression<'a> {
     Call(Box<CallExpr<'a>>),
     Assign(Box<AssignExpr<'a>>),
     Variable(VariableExpr<'a>),
+    Box(Box<BoxExpr<'a>>),
+    Unbox(Box<UnboxExpr<'a>>)
 }
 
 impl Expression<'_> {
@@ -25,6 +27,8 @@ impl Expression<'_> {
             Self::Call(call) => call.value_type.clone(),
             Self::Variable(var) => var.value_type.clone(),
             Self::None => ValueType::Undefined,
+            Self::Box(_) => ValueType::Any,
+            Self::Unbox(unbox) => unbox.value_type.clone()
         }
     }
 }
@@ -118,6 +122,22 @@ pub struct AssignExpr<'a> {
     pub value: Expression<'a>,
     pub line: usize,
     pub column: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct BoxExpr<'a> {
+    pub value: Expression<'a>,
+    pub line: usize,
+    pub column: usize,
+    pub value_type: ValueType,
+}
+
+#[derive(Debug, Clone)]
+pub struct UnboxExpr<'a> {
+    pub value: Expression<'a>,
+    pub line: usize,
+    pub column: usize,
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
@@ -488,24 +508,24 @@ impl<'a> Parser<'a> {
             "expect ':' after variable name".to_string(),
         )?;
 
-        let var_type = self.parse_type()?;
+        let var_type = self.parse_type().unwrap_or_else(|_|{ ValueType::Undefined });
 
-        _ = self.consume(
-            TokenKind::Equal,
-            "expected '=' after variable type".to_string(),
-        )?;
+        let mut value = None;
 
-        let value = self.expression()?;
+        if self.match_tokens(&[TokenKind::Equal]) {
+            value = Some(self.expression()?);
+        }
 
         // _ = self.consume(
         //     TokenKind::NewLine,
         //     "expected new line after var declaration".to_string(),
         // )?;
+        
         self.skip(TokenKind::NewLine);
 
         let var_decl = VarDeclStmt {
             name: name.lexeme,
-            value: Some(value),
+            value,
             line: name.line,
             column: name.line,
             value_type: var_type,

@@ -327,7 +327,18 @@ impl<'a> TypeChecker<'a> {
             Expression::Call(call) => {
                 let call = call.as_mut();
                 self.check_call(call)
-            }
+            },
+
+            Expression::Box(_) => {
+                ValueType::Any
+            },
+
+            Expression::Unbox(unbox_expr) => {
+                let inner = self.check_expression(&mut unbox_expr.value);
+
+                self.check_annotation(unbox_expr.line, unbox_expr.column, &inner, &ValueType::Any);
+                unbox_expr.value_type.clone()
+            },
         }
     }
 

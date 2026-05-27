@@ -36,6 +36,9 @@ pub enum OpCode {
     BrFalse,
     Jump,
 
+    Box,
+    Unbox,
+
     Call,   // direct call
     Invoke, // indirect call
     Ret,
@@ -75,6 +78,9 @@ impl OpCode {
 
             x if x == OpCode::BrFalse as u32 => OpCode::BrFalse,
             x if x == OpCode::Jump as u32 => OpCode::Jump,
+
+            x if x == OpCode::Box as u32 => OpCode::Box,
+            x if x == OpCode::Unbox as u32 => OpCode::Unbox,
 
             x if x == OpCode::Call as u32 => OpCode::Call,
             x if x == OpCode::Invoke as u32 => OpCode::Invoke,

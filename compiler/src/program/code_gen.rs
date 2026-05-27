@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, u32};
 
 use program::{Constant, FunctionKind, FunctionMetadata, Program, TypeInfo};
 
@@ -640,6 +640,78 @@ impl ProgramBuilder {
                         ));
                     }
                 }
+                IrInstruction::Box { dest, src, val_type } => {
+                    let type_size = val_type.get_size() as u8;
+
+                    let type_index = match val_type {
+                        ValueType::Bool => self.push_type(TypeInfo { 
+                            kind: program::TypeKind::Bool, 
+                            size: type_size
+                        }),
+
+                        ValueType::I64 => self.push_type(TypeInfo {
+                            kind: program::TypeKind::I64, 
+                            size: type_size
+                        }),
+
+                        ValueType::F64 => self.push_type(TypeInfo {
+                            kind: program::TypeKind::F64, 
+                            size: type_size
+                        }),
+
+                        ValueType::String => self.push_type(TypeInfo {
+                            kind: program::TypeKind::String, 
+                            size: type_size
+                        }),
+
+                        _ => {
+                            panic!("can not box a value of type {:?}", val_type);
+                        }
+                    };
+
+                    self.instructions.push(InstructionBuilder::new_format_b(
+                        OpCode::Box,
+                        *dest as u32,
+                        *src as u32,
+                        type_index as u32,
+                    ));
+                },
+                IrInstruction::Unbox { dest, src, val_type } => {
+                    let type_size = val_type.get_size() as u8;
+
+                    let type_index = match val_type {
+                        ValueType::Bool => self.push_type(TypeInfo { 
+                            kind: program::TypeKind::Bool, 
+                            size: type_size
+                        }),
+
+                        ValueType::I64 => self.push_type(TypeInfo {
+                            kind: program::TypeKind::I64, 
+                            size: type_size
+                        }),
+
+                        ValueType::F64 => self.push_type(TypeInfo {
+                            kind: program::TypeKind::F64, 
+                            size: type_size
+                        }),
+
+                        ValueType::String => self.push_type(TypeInfo {
+                            kind: program::TypeKind::String, 
+                            size: type_size
+                        }),
+
+                        _ => {
+                            panic!("can not box a value of type {:?}", val_type);
+                        }
+                    };
+
+                    self.instructions.push(InstructionBuilder::new_format_b(
+                        OpCode::Unbox,
+                        *dest as u32,
+                        *src as u32,
+                        type_index as u32,
+                    ));
+                },
             }
         }
 
@@ -654,6 +726,17 @@ impl ProgramBuilder {
         } else {
             self.constants.push(new);
             self.constants.len() - 1
+        }
+    }
+
+    fn push_type(&mut self, new: TypeInfo) -> usize {
+        let existing = self.types.iter().position(|type_info| type_info == &new);
+
+        if let Some(index) = existing {
+            index
+        } else {
+            self.types.push(new);
+            self.types.len() - 1
         }
     }
 }
