@@ -39,6 +39,9 @@ pub enum OpCode {
     Box,
     Unbox,
 
+    F64ToI64,
+    I64ToF64,
+
     Call,   // direct call
     Invoke, // indirect call
     Ret,
@@ -81,6 +84,9 @@ impl OpCode {
 
             x if x == OpCode::Box as u32 => OpCode::Box,
             x if x == OpCode::Unbox as u32 => OpCode::Unbox,
+
+            x if x == OpCode::F64ToI64 as u32 => OpCode::F64ToI64,
+            x if x == OpCode::I64ToF64 as u32 => OpCode::I64ToF64,
 
             x if x == OpCode::Call as u32 => OpCode::Call,
             x if x == OpCode::Invoke as u32 => OpCode::Invoke,

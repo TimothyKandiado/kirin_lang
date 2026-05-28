@@ -346,6 +346,16 @@ impl RegisterAllocator {
 
                         virtual_registers[*src].set_coord(ir_coord);
                     },
+                    IrInstruction::F64ToI64 { dest, src } => {
+                        virtual_registers[*dest].set_coord(ir_coord);
+
+                        virtual_registers[*src].set_coord(ir_coord);
+                    },
+                    IrInstruction::I64ToF64 { dest, src } => {
+                        virtual_registers[*dest].set_coord(ir_coord);
+
+                        virtual_registers[*src].set_coord(ir_coord);
+                    },
                 }
             }
         }

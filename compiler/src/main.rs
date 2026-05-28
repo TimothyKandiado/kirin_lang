@@ -44,13 +44,15 @@ fn main() {
 
     let mut ast = ast_result.unwrap();
 
-    // for stmt in &ast {
-    //     println!("{:?}", stmt);
-    // }
+    
 
     let type_checker = TypeChecker::new();
 
     let errors = type_checker.check_module(&mut ast);
+
+    for stmt in &ast {
+        dbg!(stmt);
+    }
 
     if !errors.is_empty() {
         for error in errors {
@@ -59,6 +61,7 @@ fn main() {
                 error.line, error.column, error.context
             )
         }
+        return;
     }
 
     let ir_module = lower_ast(&ast);

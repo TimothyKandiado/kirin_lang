@@ -258,6 +258,8 @@ impl<'a> TypeChecker<'a> {
                 };
 
                 self.check_annotation(literal.line, literal.column, &literal.value_type, &inferred);
+
+            
                 inferred
             }
 
@@ -265,6 +267,11 @@ impl<'a> TypeChecker<'a> {
                 match self.symbols.lookup(var.name) {
                     Some(ty) => {
                         self.check_annotation(var.line, var.column, &var.value_type, &ty);
+
+                        if &var.value_type == &ValueType::Undefined {
+                            var.value_type = ty.clone();
+                        }
+
                         ty
                     }
                     None => {
@@ -338,6 +345,26 @@ impl<'a> TypeChecker<'a> {
 
                 self.check_annotation(unbox_expr.line, unbox_expr.column, &inner, &ValueType::Any);
                 unbox_expr.value_type.clone()
+            },
+            Expression::Cast(cast_expr) => {
+                let source_type = self.check_expression(&mut cast_expr.value);
+                let target_type = cast_expr.value_type.clone();
+
+                if source_type == ValueType::I64 && target_type == ValueType::F64 {
+                    return target_type;
+                }
+
+                if source_type == ValueType::F64 && target_type == ValueType::I64 {
+                    return target_type;
+                }
+
+                if source_type == target_type {
+                    return target_type;
+                }
+
+                self.error(cast_expr.line, cast_expr.column, format!("cannot cast from {} to {}", source_type, target_type));
+
+                ValueType::Undefined
             },
         }
     }

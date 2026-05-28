@@ -1,0 +1,15 @@
+package main
+
+native fn print(arg: any): void
+
+fn main(): void {
+    print("Casting in kirin" as any)
+
+    x : f64 = 200.75
+
+    print(x as any)
+
+    y : i64 = x as i64
+
+    print(y as any)
+}

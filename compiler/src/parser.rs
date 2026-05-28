@@ -13,7 +13,8 @@ pub enum Expression<'a> {
     Assign(Box<AssignExpr<'a>>),
     Variable(VariableExpr<'a>),
     Box(Box<BoxExpr<'a>>),
-    Unbox(Box<UnboxExpr<'a>>)
+    Unbox(Box<UnboxExpr<'a>>),
+    Cast(Box<CastExpr<'a>>)
 }
 
 impl Expression<'_> {
@@ -28,7 +29,8 @@ impl Expression<'_> {
             Self::Variable(var) => var.value_type.clone(),
             Self::None => ValueType::Undefined,
             Self::Box(_) => ValueType::Any,
-            Self::Unbox(unbox) => unbox.value_type.clone()
+            Self::Unbox(unbox) => unbox.value_type.clone(),
+            Self::Cast(cast) => cast.value_type.clone()
         }
     }
 }
@@ -122,6 +124,14 @@ pub struct AssignExpr<'a> {
     pub value: Expression<'a>,
     pub line: usize,
     pub column: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct CastExpr<'a> {
+    pub value: Expression<'a>,
+    pub line: usize,
+    pub column: usize,
+    pub value_type: ValueType,
 }
 
 #[derive(Debug, Clone)]
@@ -952,7 +962,7 @@ impl<'a> Parser<'a> {
     }
 
     fn power(&mut self) -> Result<Expression<'a>, ParseError> {
-        let expr = self.unary()?;
+        let expr = self.cast()?;
 
         if self.match_tokens(&[TokenKind::Caret]) {
             let prev = self.previous();
@@ -970,6 +980,42 @@ impl<'a> Parser<'a> {
             };
 
             return Ok(Expression::Binary(Box::new(binary_expr)));
+        }
+
+        Ok(expr)
+    }
+
+    fn cast(&mut self) -> Result<Expression<'a>, ParseError> {
+        let expr = self.unary()?;
+
+        if self.match_tokens(&[TokenKind::As]) {
+            let prev = self.previous();
+
+            let target_type = self.parse_type()?;
+
+            match target_type {
+                ValueType::Any => {
+                    let box_expr = BoxExpr{
+                        column: prev.column,
+                        line: prev.line,
+                        value: expr,
+                        value_type: ValueType::Any
+                    };
+
+                    return Ok(Expression::Box(Box::new(box_expr)))
+                }
+
+                _ => {
+                    let cast_expr = CastExpr {
+                        column: prev.column,
+                        line: prev.line,
+                        value: expr,
+                        value_type: target_type
+                    };
+
+                    return Ok(Expression::Cast(Box::new(cast_expr)))
+                }
+            }
         }
 
         Ok(expr)

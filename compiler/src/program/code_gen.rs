@@ -712,6 +712,22 @@ impl ProgramBuilder {
                         type_index as u32,
                     ));
                 },
+                IrInstruction::F64ToI64 { dest, src } => {
+                    self.instructions.push(InstructionBuilder::new_format_b(
+                        OpCode::F64ToI64, 
+                        *dest as u32, 
+                        *src as u32, 
+                        0
+                    ));
+                },
+                IrInstruction::I64ToF64 { dest, src } => {
+                    self.instructions.push(InstructionBuilder::new_format_b(
+                        OpCode::I64ToF64, 
+                        *dest as u32, 
+                        *src as u32, 
+                        0
+                    ));
+                },
             }
         }
 

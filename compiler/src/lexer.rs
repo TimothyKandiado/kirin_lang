@@ -54,6 +54,7 @@ pub enum TokenKind {
     True,
     False,
     Package,
+    As,
 
     // Brackets
     ParenLeft,
@@ -296,6 +297,7 @@ impl<'a> Parser<'a> {
             "native" => self.emit_token(TokenKind::Native, "", line, column),
             "package" => self.emit_token(TokenKind::Package, "", line, column),
             "return" => self.emit_token(TokenKind::Return, "", line, column),
+            "as" => self.emit_token(TokenKind::As, "", line, column),
 
             _ => self.emit_token(TokenKind::Identifier, segment, line, column),
         }

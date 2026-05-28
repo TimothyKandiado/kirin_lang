@@ -33,11 +33,14 @@ pub const OP_JUMP: u8 = 0x17;
 pub const OP_BOX: u8 = 0x18;
 pub const OP_UNBOX: u8 = 0x19;
 
-pub const OP_CALL: u8 = 0x1A;   // direct call
-pub const OP_INVOKE: u8 = 0x1B; // indirect call
-pub const OP_RET: u8 = 0x1C;
-pub const OP_RET_VOID: u8 = 0x1D;
-pub const OP_HALT: u8 = 0x1E;
+pub const OP_F64_TO_I64: u8 = 0x1A;
+pub const OP_I64_TO_F64: u8 = 0x1B;
+
+pub const OP_CALL: u8 = 0x1C;      // direct call
+pub const OP_INVOKE: u8 = 0x1D;    // indirect call
+pub const OP_RET: u8 = 0x1E;
+pub const OP_RET_VOID: u8 = 0x1F;
+pub const OP_HALT: u8 = 0x20;
 
 
 pub fn opcode_name(op: u8) -> &'static str {
@@ -76,6 +79,9 @@ pub fn opcode_name(op: u8) -> &'static str {
 
         OP_BOX => "OP_BOX",
         OP_UNBOX => "OP_UNBOX",
+
+        OP_I64_TO_F64 => "OP_I64_TO_F64",
+        OP_F64_TO_I64 => "OP_F64_TO_I64",
 
         OP_CALL => "OP_CALL",
         OP_INVOKE => "OP_INVOKE",

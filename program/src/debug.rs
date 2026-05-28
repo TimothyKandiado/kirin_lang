@@ -56,8 +56,9 @@ pub fn debug_print_instruction(instruction: Instruction) {
 
             println!("OP_JUMP {}", offset);
         }
-        OP_CALL => print_format_b(instruction),
-        OP_INVOKE => print_format_b(instruction),
+        
+        OP_CALL | OP_INVOKE | OP_F64_TO_I64 | OP_I64_TO_F64 | OP_BOX | OP_UNBOX => print_format_b(instruction),
+
         OP_RET => print_format_c(instruction),
         OP_RET_VOID => println!("OP_RET_VOID"),
         OP_HALT => println!("OP_HALT"),

@@ -74,6 +74,16 @@ pub enum IrInstruction<'a> {
         val_type: ValueType,
     },
 
+    F64ToI64 {
+        dest: Reg,
+        src: Reg
+    },
+
+    I64ToF64 {
+        dest: Reg,
+        src: Reg,
+    },
+
     Call {
         dest: Option<Reg>,
         callee: Callee<'a>,
@@ -174,7 +184,7 @@ impl<'a> IrBuilder<'a> {
                     .lower_expression(&bin.right)
                     .expect("rhs must yield value");
 
-                let dest = self.get_register(bin.value_type.clone());
+                let dest = self.allocate_register(bin.value_type.clone());
 
                 self.push_instruction(IrInstruction::BinOp {
                     dest,
@@ -190,7 +200,7 @@ impl<'a> IrBuilder<'a> {
                 let rhs = self
                     .lower_expression(&unary.value)
                     .expect("unary expression must yield a value");
-                let dest = self.get_register(unary.value_type.clone());
+                let dest = self.allocate_register(unary.value_type.clone());
 
                 self.push_instruction(IrInstruction::UnaryOp {
                     dest,
@@ -224,7 +234,7 @@ impl<'a> IrBuilder<'a> {
                 }
 
                 if let Some(global) = self.globals.get(variable.name) {
-                    let dest = self.get_register(global.val_type.clone());
+                    let dest = self.allocate_register(global.val_type.clone());
 
                     self.push_instruction(IrInstruction::LoadGlobal {
                         dest,
@@ -238,7 +248,7 @@ impl<'a> IrBuilder<'a> {
             }
 
             Expression::Literal(literal) => {
-                let dest = self.get_register(literal.value_type.clone());
+                let dest = self.allocate_register(literal.value_type.clone());
 
                 match literal.value {
                     LiteralValue::F64(val) => {
@@ -282,11 +292,11 @@ impl<'a> IrBuilder<'a> {
                         if !is_sequential(&args) {
                             let mut moved_args = Vec::new();
 
-                            let function_registers = self.get_allocated_registers();
+                            let function_registers = self.get_allocated_registers().clone();
 
                             for arg in args {
                                 let val_type = function_registers[arg].clone();
-                                let reg = self.get_register(val_type);
+                                let reg = self.allocate_register(val_type);
 
                                 self.push_instruction(IrInstruction::Copy {
                                     dest: reg,
@@ -299,7 +309,7 @@ impl<'a> IrBuilder<'a> {
                             args = moved_args;
                         }
 
-                        let dest = self.get_register(call.value_type.clone());
+                        let dest = self.allocate_register(call.value_type.clone());
 
                         self.push_instruction(IrInstruction::Call {
                             dest: Some(dest),
@@ -324,7 +334,7 @@ impl<'a> IrBuilder<'a> {
                         .expect("argument expression should yield a value");
                     args.push(reg);
                 }
-                let dest = self.get_register(call.value_type.clone());
+                let dest = self.allocate_register(call.value_type.clone());
 
                 self.push_instruction(IrInstruction::Call {
                     dest: Some(dest),
@@ -337,17 +347,42 @@ impl<'a> IrBuilder<'a> {
             }
             Expression::Box(box_expr) => {
                 let src = self.lower_expression(&box_expr.value).expect("expected value to box");
-                let dest = self.get_register(ValueType::Any);
+                let dest = self.allocate_register(ValueType::Any);
 
-                self.push_instruction(IrInstruction::Box { dest, src, val_type: box_expr.value.get_value_type() });
+                let registers = self.get_allocated_registers();
+                let val_type = registers[src].clone();
+
+                self.push_instruction(IrInstruction::Box { dest, src, val_type });
 
                 Some(dest)
             },
             Expression::Unbox(unbox_expr) => {
                 let src = self.lower_expression(&unbox_expr.value).expect("expected value to unbox");
-                let dest = self.get_register(unbox_expr.value_type.clone());
+                let dest = self.allocate_register(unbox_expr.value_type.clone());
 
                 self.push_instruction(IrInstruction::Unbox { dest, src, val_type: unbox_expr.value_type.clone() });
+
+                Some(dest)
+            },
+            Expression::Cast(cast_expr) => {
+                let source_type = &cast_expr.value.get_value_type();
+                let target_type = &cast_expr.value_type;
+
+                let src = self.lower_expression(&cast_expr.value).expect("expected a value to be cast");
+
+                if source_type == target_type {
+                    return Some(src);
+                }
+
+                let dest = self.allocate_register(cast_expr.value_type.clone());
+
+                if source_type == &ValueType::F64 && target_type == &ValueType::I64 {
+                    self.push_instruction(IrInstruction::F64ToI64 { dest, src });
+                } else if source_type == &ValueType::I64 && target_type == &ValueType::F64 {
+                    self.push_instruction(IrInstruction::I64ToF64 { dest, src } );
+                } else {
+                    panic!("cannot cast from {} to {}", source_type, target_type)
+                }
 
                 Some(dest)
             },
@@ -598,7 +633,7 @@ impl<'a> IrBuilder<'a> {
         }
     }
 
-    fn get_register(&mut self, value_type: ValueType) -> Reg {
+    fn allocate_register(&mut self, value_type: ValueType) -> Reg {
         if self.current_function.is_none() {
             panic!("cannot request a register in global scope")
         }
@@ -628,7 +663,7 @@ impl<'a> IrBuilder<'a> {
         }
     }
 
-    fn get_allocated_registers(&self) -> Vec<ValueType> {
+    fn get_allocated_registers(&self) -> &Vec<ValueType> {
         if self.current_function.is_none() {
             panic!("cannot request a register in global scope")
         }
@@ -647,7 +682,7 @@ impl<'a> IrBuilder<'a> {
             panic!("cannot get registers in a non Bytecode function")
         };
 
-        reg_types.clone()
+        reg_types
     }
 
     fn push_block(&mut self) -> Label {
@@ -785,7 +820,7 @@ impl<'a> IrBuilder<'a> {
     }
 
     fn add_local(&mut self, name: &'a str, value_type: ValueType) -> Reg {
-        let reg = self.get_register(value_type);
+        let reg = self.allocate_register(value_type);
 
         let top_scope = self
             .scope_stack
