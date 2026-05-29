@@ -19,7 +19,10 @@ pub fn debug_program(program: &Program) {
 
     println!("=== Types ===");
     for (idx, type_info) in program.types.iter().enumerate() {
-        println!("[{}] => name: {:?}, size: {}", idx, type_info.kind, type_info.size)
+        println!(
+            "[{}] => name: {:?}, size: {}",
+            idx, type_info.kind, type_info.size
+        )
     }
 
     println!("=== Instructions ===");
@@ -31,17 +34,36 @@ pub fn debug_program(program: &Program) {
     println!("===================");
 }
 
-static FORMAT_A_OPS : LazyLock<Vec<u8>> = LazyLock::new(|| {
+static FORMAT_A_OPS: LazyLock<Vec<u8>> = LazyLock::new(|| {
     vec![
-        OP_ADD_I64 , OP_SUB_I64 , OP_MUL_I64 , OP_DIV_I64 , OP_MOD_I64 , OP_POW_I64, 
-        OP_ADD_F64 , OP_SUB_F64 , OP_MUL_F64 , OP_DIV_F64 , OP_MOD_F64 , OP_POW_F64,
-        OP_CMP_LE_I64, OP_CMP_LT_I64, OP_CMP_LE_F64, OP_CMP_LT_F64, OP_CMP_EQ
+        OP_ADD_I64,
+        OP_SUB_I64,
+        OP_MUL_I64,
+        OP_DIV_I64,
+        OP_MOD_I64,
+        OP_POW_I64,
+        OP_ADD_F64,
+        OP_SUB_F64,
+        OP_MUL_F64,
+        OP_DIV_F64,
+        OP_MOD_F64,
+        OP_POW_F64,
+        OP_CMP_LE_I64,
+        OP_CMP_LT_I64,
+        OP_CMP_LE_F64,
+        OP_CMP_LT_F64,
+        OP_CMP_EQ,
     ]
 });
 
 static FORMAT_C_OPS: LazyLock<Vec<u8>> = LazyLock::new(|| {
     vec![
-        OP_CONST_I64, OP_CONST_I64_IMM, OP_CONST_F64, OP_CONST_FALSE, OP_CONST_TRUE, OP_CONST_STR
+        OP_CONST_I64,
+        OP_CONST_I64_IMM,
+        OP_CONST_F64,
+        OP_CONST_FALSE,
+        OP_CONST_TRUE,
+        OP_CONST_STR,
     ]
 });
 
@@ -62,7 +84,7 @@ pub fn debug_print_instruction(instruction: Instruction) {
             let opcode = opcode_name(opcode);
 
             println!("{} dest:{} | src:{}", opcode, dest, src)
-        },
+        }
 
         OP_BR_FALSE => {
             let offset = InstructionDecoder::decode_imm19(instruction);
@@ -81,8 +103,7 @@ pub fn debug_print_instruction(instruction: Instruction) {
         x if FORMAT_A_OPS.contains(&x) => {
             print_format_a(instruction);
         }
-        
-        
+
         x if FORMAT_C_OPS.contains(&x) => print_format_c(instruction),
 
         OP_F64_TO_I64 | OP_I64_TO_F64 => {
@@ -94,9 +115,7 @@ pub fn debug_print_instruction(instruction: Instruction) {
             println!("{}  dest:{} | src:{}", opcode, dest, src)
         }
 
-        OP_BOX | OP_UNBOX => {
-            print_box_op(instruction)
-        }
+        OP_BOX | OP_UNBOX => print_box_op(instruction),
 
         OP_RET => {
             let opcode = opcode_name(opcode);
@@ -104,12 +123,12 @@ pub fn debug_print_instruction(instruction: Instruction) {
             let const19 = InstructionDecoder::decode_const19(instruction);
 
             println!("{}  {}", opcode, const19);
-        },
+        }
 
         _ => {
             let opcode = opcode_name(opcode);
             println!("{}", opcode)
-        },
+        }
     }
 }
 
@@ -132,7 +151,10 @@ fn print_box_op(instruction: Instruction) {
     let src1 = InstructionDecoder::decode_src1(instruction);
     let const13 = InstructionDecoder::decode_const13(instruction);
 
-    println!("{}  dest:{} | src:{} | type:{}", opcode, dest, src1, const13)
+    println!(
+        "{}  dest:{} | src:{} | type:{}",
+        opcode, dest, src1, const13
+    )
 }
 
 fn print_call(instruction: Instruction) {
@@ -143,7 +165,10 @@ fn print_call(instruction: Instruction) {
     let src1 = InstructionDecoder::decode_src1(instruction);
     let const13 = InstructionDecoder::decode_const13(instruction);
 
-    println!("{}  ret:{} | params:{} | idx:{}", opcode, dest, src1, const13)
+    println!(
+        "{}  ret:{} | params:{} | idx:{}",
+        opcode, dest, src1, const13
+    )
 }
 
 fn print_format_c(instruction: Instruction) {

@@ -262,36 +262,34 @@ impl<'a> TypeChecker<'a> {
                 inferred
             }
 
-            Expression::Variable(var) => {
-                match self.symbols.lookup(var.name) {
-                    Some(ty) => {
-                        self.check_annotation(var.line, var.column, &var.value_type, &ty);
+            Expression::Variable(var) => match self.symbols.lookup(var.name) {
+                Some(ty) => {
+                    self.check_annotation(var.line, var.column, &var.value_type, &ty);
 
-                        if var.value_type == ValueType::Undefined {
-                            var.value_type = ty.clone();
-                        }
-
-                        ty
+                    if var.value_type == ValueType::Undefined {
+                        var.value_type = ty.clone();
                     }
-                    None => {
-                        if let Some(func_sign) = self.functions.get(var.name) {
-                            let value_type = ValueType::Fn(Box::new(func_sign.clone()));
 
-                            if var.value_type.is_undefined() {
-                                var.value_type = value_type.clone();
-                            }
-
-                            return value_type;
-                        }
-                        self.error(
-                            var.line,
-                            var.column,
-                            format!("undefined variable '{}'", var.name),
-                        );
-                        ValueType::Undefined
-                    }
+                    ty
                 }
-            }
+                None => {
+                    if let Some(func_sign) = self.functions.get(var.name) {
+                        let value_type = ValueType::Fn(Box::new(func_sign.clone()));
+
+                        if var.value_type.is_undefined() {
+                            var.value_type = value_type.clone();
+                        }
+
+                        return value_type;
+                    }
+                    self.error(
+                        var.line,
+                        var.column,
+                        format!("undefined variable '{}'", var.name),
+                    );
+                    ValueType::Undefined
+                }
+            },
 
             Expression::Grouping(g) => {
                 let inner = self.check_expression(&mut g.expression);
@@ -342,7 +340,7 @@ impl<'a> TypeChecker<'a> {
                 self.check_expression(&mut box_expr.value);
 
                 ValueType::Any
-            },
+            }
 
             Expression::Unbox(unbox_expr) => {
                 let inner = self.check_expression(&mut unbox_expr.value);
@@ -620,7 +618,11 @@ impl<'a> TypeChecker<'a> {
             }
 
             _ => {
-                self.error(call.line, call.column, format!("value type: '{}' is not a callable", callee));
+                self.error(
+                    call.line,
+                    call.column,
+                    format!("value type: '{}' is not a callable", callee),
+                );
                 ValueType::Undefined
             }
         };

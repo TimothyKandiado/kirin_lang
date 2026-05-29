@@ -90,7 +90,7 @@ impl VmControlOps for VM<'_> {
 
                 let mut ctx = VmContext {
                     constants: self.constants,
-                    types: self.types
+                    types: self.types,
                 };
 
                 let result = (native_func.function)(&mut ctx, argument_slots, return_slots);

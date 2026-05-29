@@ -997,36 +997,28 @@ impl<'a> Parser<'a> {
     }
 
     fn cast(&mut self) -> Result<Expression<'a>, ParseError> {
-        let expr = self.unary()?;
+        let mut expr = self.unary()?;
 
-        if self.match_tokens(&[TokenKind::As]) {
+        while self.match_tokens(&[TokenKind::As]) {
             let prev = self.previous();
 
             let target_type = self.parse_type()?;
 
-            match target_type {
-                ValueType::Any => {
-                    let box_expr = BoxExpr {
-                        column: prev.column,
-                        line: prev.line,
-                        value: expr,
-                        value_type: ValueType::Any,
-                    };
+            expr = match target_type {
+                ValueType::Any => Expression::Box(Box::new(BoxExpr {
+                    column: prev.column,
+                    line: prev.line,
+                    value: expr,
+                    value_type: ValueType::Any,
+                })),
 
-                    return Ok(Expression::Box(Box::new(box_expr)));
-                }
-
-                _ => {
-                    let cast_expr = CastExpr {
-                        column: prev.column,
-                        line: prev.line,
-                        value: expr,
-                        value_type: target_type,
-                    };
-
-                    return Ok(Expression::Cast(Box::new(cast_expr)));
-                }
-            }
+                _ => Expression::Cast(Box::new(CastExpr {
+                    column: prev.column,
+                    line: prev.line,
+                    value: expr,
+                    value_type: target_type,
+                })),
+            };
         }
 
         Ok(expr)

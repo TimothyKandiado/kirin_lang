@@ -3,11 +3,11 @@ package main
 native fn print_any(arg: any): void
 
 fn main(): void {
-    print_any("Casting in kirin" as any)
+    print_any("casting in kirin" as any)
 
     x : f64 = 200.75
 
-    print_any(square(x) as any)
+    print_any(square(x) as f64 as any)
 
     y : i64 = x as i64
 

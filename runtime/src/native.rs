@@ -69,12 +69,11 @@ fn print_any(
     ctx: &mut VmContext<'_>,
     args: &[Register],
     _: &mut [Register],
-)
--> Result<(), VmError> {
+) -> Result<(), VmError> {
     if args.len() != 2 {
-        return Err(
-            VmError { message: "expected 2 registers as arguments".to_string() }
-        )
+        return Err(VmError {
+            message: "expected 2 registers as arguments".to_string(),
+        });
     }
 
     let type_info = ctx.types[args[0] as usize];
@@ -84,7 +83,7 @@ fn print_any(
             let value = args[1] as i64;
 
             println!("{}", value);
-        },
+        }
 
         TypeKind::F64 => {
             let value = f64::from_bits(args[1]);
@@ -93,7 +92,7 @@ fn print_any(
         }
 
         TypeKind::Bool => {
-            let value = if args[1] == 0 { "true"} else { "false" };
+            let value = if args[1] == 0 { "true" } else { "false" };
 
             println!("{}", value)
         }
@@ -104,7 +103,12 @@ fn print_any(
             if let Constant::String(string) = &ctx.constants[const_index] {
                 println!("{}", string);
             } else {
-                return Err(VmError { message: format!("expected constant string but found {:?}", &ctx.constants[const_index]) })
+                return Err(VmError {
+                    message: format!(
+                        "expected constant string but found {:?}",
+                        &ctx.constants[const_index]
+                    ),
+                });
             }
         }
     }

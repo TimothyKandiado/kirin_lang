@@ -5,7 +5,7 @@ mod ops_control;
 use crate::{
     Register,
     native::NativeFunctionWrapper,
-    vm::{ops_arithmetic::VmArithmeticOps, ops_control::VmControlOps, ops_casting::VmCastingOps},
+    vm::{ops_arithmetic::VmArithmeticOps, ops_casting::VmCastingOps, ops_control::VmControlOps},
 };
 use program::{
     Constant, FunctionKind, FunctionMetadata, Instruction, InstructionBuilder, InstructionDecoder,
@@ -59,7 +59,7 @@ struct FrameHeader {
 
 pub struct VmContext<'a> {
     pub constants: &'a [Constant],
-    pub types: &'a [TypeInfo]
+    pub types: &'a [TypeInfo],
 }
 
 #[derive(Debug, Clone)]
