@@ -42,7 +42,7 @@ impl VmCastingOps for VM<'_> {
         self.set_register(dest + 1, value);
     }
 
-    fn unbox_value(&mut self, instruction: Instruction) {
+    fn unbox_value(&mut self, _instruction: Instruction) {
         todo!()
     }
 }

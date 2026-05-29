@@ -7,9 +7,13 @@ fn main(): void {
 
     x : f64 = 200.75
 
-    print_any(x as any)
+    print_any(square(x) as any)
 
     y : i64 = x as i64
 
     print_any(y as any)
+}
+
+fn square(val: f64): f64 {
+    return val*val
 }

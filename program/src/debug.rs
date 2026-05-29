@@ -17,6 +17,11 @@ pub fn debug_program(program: &Program) {
         println!("[{}] => {:?}", idx, func)
     }
 
+    println!("=== Types ===");
+    for (idx, type_info) in program.types.iter().enumerate() {
+        println!("[{}] => name: {:?}, size: {}", idx, type_info.kind, type_info.size)
+    }
+
     println!("=== Instructions ===");
     for (idx, &instruction) in program.instructions.iter().enumerate() {
         print!("[{}] ", idx);

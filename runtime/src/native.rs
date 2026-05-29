@@ -73,7 +73,7 @@ fn print_any(
 -> Result<(), VmError> {
     if args.len() != 2 {
         return Err(
-            VmError { message: format!("expected 2 registers as arguments") }
+            VmError { message: "expected 2 registers as arguments".to_string() }
         )
     }
 

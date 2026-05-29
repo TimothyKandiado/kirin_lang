@@ -1,4 +1,4 @@
-use std::{collections::HashMap, u32};
+use std::{collections::HashMap};
 
 use program::{Constant, FunctionKind, FunctionMetadata, Program, TypeInfo};
 
@@ -232,175 +232,291 @@ impl ProgramBuilder {
 
                     match op {
                         BinaryExprOp::Add => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::AddI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Add not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::AddI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::AddF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Add not implemented for {}", val_type)
                             }
                         }
                         BinaryExprOp::Sub => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::SubI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Sub not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::SubI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::SubF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Sub not implemented for {}", val_type)
                             }
                         }
                         BinaryExprOp::Mul => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::MulI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Mul not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::MulI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::MulF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Mul not implemented for {}", val_type)
                             }
                         }
                         BinaryExprOp::Div => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::DivI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Div not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::DivI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::DivF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Div not implemented for {}", val_type)
                             }
                         }
                         BinaryExprOp::Mod => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::ModI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Mod not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::ModI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::ModF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Mod not implemented for {}", val_type)
                             }
                         }
                         BinaryExprOp::Pow => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::PowI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Pow not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::PowI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                },
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::PowF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+                                _ => panic!("Pow not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::Less => {
                             let val_type = reg_types[*lhs].clone();
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpLtI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Add not implemented for {}", val_type)
+
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLtI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLtF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+
+                                _ => panic!("LessThan not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::LessEqual => {
                             let val_type = reg_types[*lhs].clone();
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpLeI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Add not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLeI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLeF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+
+                                _ => panic!("LessEqual not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::Greater => {
                             let val_type = reg_types[*lhs].clone();
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpLeI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::Not,
-                                    dest,
-                                    dest,
-                                    0,
-                                ));
-                            } else {
-                                panic!("Add not implemented for {}", val_type)
+
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLeI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::Not,
+                                        dest,
+                                        dest,
+                                        0,
+                                    ));
+                                }
+
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLeF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::Not,
+                                        dest,
+                                        dest,
+                                        0,
+                                    ));
+                                }
+
+                                _ => panic!("Greater not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::GreaterEqual => {
                             let val_type = reg_types[*lhs].clone();
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpLtI64,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::Not,
-                                    dest,
-                                    dest,
-                                    0,
-                                ));
-                            } else {
-                                panic!("GreaterEqual not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLtI64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::Not,
+                                        dest,
+                                        dest,
+                                        0,
+                                    ));
+                                }
+
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpLtF64,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::Not,
+                                        dest,
+                                        dest,
+                                        0,
+                                    ));
+                                }
+
+                                _ => panic!("GreaterEqual not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::Equal => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpEq,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                            } else {
-                                panic!("Equal not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 | ValueType::F64 | ValueType::Bool => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpEq,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                }
+
+                                _ => panic!("Equal not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::NotEqual => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::CmpEq,
-                                    dest,
-                                    src1,
-                                    src2,
-                                ));
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::Not,
-                                    dest,
-                                    dest,
-                                    0,
-                                ));
-                            } else {
-                                panic!("Add not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 | ValueType::F64 | ValueType::Bool => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::CmpEq,
+                                        dest,
+                                        src1,
+                                        src2,
+                                    ));
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::Not,
+                                        dest,
+                                        dest,
+                                        0,
+                                    ));
+                                }
+
+                                _ => panic!("NotEqual not implemented for {}", val_type)
                             }
                         }
 
@@ -414,13 +530,13 @@ impl ProgramBuilder {
                                     src2,
                                 ));
                             } else {
-                                panic!("Add not implemented for {}", val_type)
+                                panic!("And not implemented for {}", val_type)
                             }
                         }
 
                         BinaryExprOp::Or => {
                             let val_type = reg_types[*lhs].clone();
-                            if let ValueType::I64 = val_type {
+                            if let ValueType::Bool = val_type {
                                 self.instructions.push(InstructionBuilder::new_format_a(
                                     OpCode::Or,
                                     dest,
@@ -428,7 +544,7 @@ impl ProgramBuilder {
                                     src2,
                                 ));
                             } else {
-                                panic!("Add not implemented for {}", val_type)
+                                panic!("Or not implemented for {}", val_type)
                             }
                         }
                     }
@@ -457,15 +573,26 @@ impl ProgramBuilder {
                             }
                         }
                         UnaryExprOp::Neg => {
-                            if let ValueType::I64 = val_type {
-                                self.instructions.push(InstructionBuilder::new_format_a(
-                                    OpCode::NegI64,
-                                    dest,
-                                    src1,
-                                    0,
-                                ));
-                            } else {
-                                panic!("Neg not implemented for {}", val_type)
+                            match val_type {
+                                ValueType::I64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::NegI64,
+                                        dest,
+                                        src1,
+                                        0,
+                                    ));
+                                }
+
+                                ValueType::F64 => {
+                                    self.instructions.push(InstructionBuilder::new_format_a(
+                                        OpCode::NegF64,
+                                        dest,
+                                        src1,
+                                        0,
+                                    ));
+                                }
+
+                                _ => panic!("Neg not implemented for {}", val_type)
                             }
                         }
                     }
@@ -678,8 +805,8 @@ impl ProgramBuilder {
 
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::Box,
-                        dest as u32,
-                        src as u32,
+                        dest,
+                        src,
                         type_index as u32,
                     ));
                 }
@@ -721,8 +848,8 @@ impl ProgramBuilder {
 
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::Unbox,
-                        dest as u32,
-                        src as u32,
+                        dest,
+                        src,
                         type_index as u32,
                     ));
                 }
@@ -732,8 +859,8 @@ impl ProgramBuilder {
 
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::F64ToI64,
-                        dest as u32,
-                        src as u32,
+                        dest,
+                        src,
                         0,
                     ));
                 }
@@ -743,8 +870,8 @@ impl ProgramBuilder {
 
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::I64ToF64,
-                        dest as u32,
-                        src as u32,
+                        dest,
+                        src,
                         0,
                     ));
                 }

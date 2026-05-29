@@ -68,7 +68,7 @@ impl VmControlOps for VM<'_> {
 
                 let ret_start = self.frame_ptr + FRAME_HEADER_LENGTH as usize + ret_start as usize;
 
-                let (argument_slots, mut return_slots) = if ret_start
+                let (argument_slots, return_slots) = if ret_start
                     >= arg_start + function_metadata.parameters as usize
                 {
                     let (arg_slice, ret_slice) = self.registers.split_at_mut(ret_start);
@@ -93,7 +93,7 @@ impl VmControlOps for VM<'_> {
                     types: self.types
                 };
 
-                let result = (native_func.function)(&mut ctx, argument_slots, &mut return_slots);
+                let result = (native_func.function)(&mut ctx, argument_slots, return_slots);
 
                 match result {
                     Ok(_) => {}

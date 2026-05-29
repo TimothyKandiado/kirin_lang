@@ -194,6 +194,12 @@ pub enum ValueType {
     Fn(Box<FunctionSignature>),
 }
 
+impl ValueType {
+    pub fn is_undefined(&self) -> bool {
+        self == &ValueType::Undefined
+    }
+}
+
 impl fmt::Display for ValueType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let val = match self {
@@ -518,7 +524,7 @@ impl<'a> Parser<'a> {
             "expect ':' after variable name".to_string(),
         )?;
 
-        let var_type = self.parse_type().unwrap_or_else(|_| ValueType::Undefined);
+        let var_type = self.parse_type().unwrap_or(ValueType::Undefined);
 
         let mut value = None;
 

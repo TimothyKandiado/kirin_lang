@@ -267,18 +267,21 @@ impl<'a> TypeChecker<'a> {
                     Some(ty) => {
                         self.check_annotation(var.line, var.column, &var.value_type, &ty);
 
-                        if &var.value_type == &ValueType::Undefined {
+                        if var.value_type == ValueType::Undefined {
                             var.value_type = ty.clone();
                         }
 
                         ty
                     }
                     None => {
-                        // Could be a function reference — check the function table.
-                        if self.functions.contains_key(var.name) {
-                            // Function references carry Undefined in value_type from the
-                            // parser; that is acceptable here.
-                            return ValueType::Undefined;
+                        if let Some(func_sign) = self.functions.get(var.name) {
+                            let value_type = ValueType::Fn(Box::new(func_sign.clone()));
+
+                            if var.value_type.is_undefined() {
+                                var.value_type = value_type.clone();
+                            }
+
+                            return value_type;
                         }
                         self.error(
                             var.line,
@@ -335,7 +338,11 @@ impl<'a> TypeChecker<'a> {
                 self.check_call(call)
             }
 
-            Expression::Box(_) => ValueType::Any,
+            Expression::Box(box_expr) => {
+                self.check_expression(&mut box_expr.value);
+
+                ValueType::Any
+            },
 
             Expression::Unbox(unbox_expr) => {
                 let inner = self.check_expression(&mut unbox_expr.value);
@@ -566,7 +573,7 @@ impl<'a> TypeChecker<'a> {
             _ => None,
         };
 
-        let sig = func_name.and_then(|name| self.functions.get(name).cloned());
+        let callee = self.check_expression(&mut call.callee);
 
         // Check argument expressions regardless.
         let arg_types: Vec<ValueType> = call
@@ -575,52 +582,47 @@ impl<'a> TypeChecker<'a> {
             .map(|a| self.check_expression(a))
             .collect();
 
-        let return_ty = if let Some(sig) = sig {
-            // Arity check.
-            if arg_types.len() != sig.parameters.len() {
-                self.error(
-                    call.line,
-                    call.column,
-                    format!(
-                        "function '{}' expects {} argument(s), got {}",
-                        func_name.unwrap(),
-                        sig.parameters.len(),
-                        arg_types.len()
-                    ),
-                );
-            } else {
-                // Per-argument type check.
-                for (i, (expected, actual)) in
-                    sig.parameters.iter().zip(arg_types.iter()).enumerate()
-                {
-                    if !types_compatible(expected, actual) {
-                        self.error(
-                            call.line,
-                            call.column,
-                            format!(
-                                "argument {} of '{}': expected {}, got {}",
-                                i + 1,
-                                func_name.unwrap(),
-                                format_type(expected),
-                                format_type(actual)
-                            ),
-                        );
+        let return_ty = match callee {
+            ValueType::Fn(sig) => {
+                if arg_types.len() != sig.parameters.len() {
+                    self.error(
+                        call.line,
+                        call.column,
+                        format!(
+                            "function '{}' expects {} argument(s), got {}",
+                            func_name.unwrap(),
+                            sig.parameters.len(),
+                            arg_types.len()
+                        ),
+                    );
+                } else {
+                    // Per-argument type check.
+                    for (i, (expected, actual)) in
+                        sig.parameters.iter().zip(arg_types.iter()).enumerate()
+                    {
+                        if !types_compatible(expected, actual) {
+                            self.error(
+                                call.line,
+                                call.column,
+                                format!(
+                                    "argument {} of '{}': expected {}, got {}",
+                                    i + 1,
+                                    func_name.unwrap(),
+                                    format_type(expected),
+                                    format_type(actual)
+                                ),
+                            );
+                        }
                     }
                 }
+                call.value_type = sig.return_type.clone();
+                sig.return_type
             }
-            call.value_type = sig.return_type.clone();
-            sig.return_type
-        } else {
-            if let Some(func_name) = func_name {
-                self.error(
-                    call.line,
-                    call.column,
-                    format!("call to undefined function '{}'", func_name),
-                );
-            } else {
-                self.error(call.line, call.column, "callee must be a named function");
+
+            _ => {
+                self.error(call.line, call.column, format!("value type: '{}' is not a callable", callee));
+                ValueType::Undefined
             }
-            ValueType::Undefined
         };
 
         self.check_annotation(call.line, call.column, &call.value_type, &return_ty);
