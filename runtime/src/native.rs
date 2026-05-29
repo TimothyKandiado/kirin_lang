@@ -1,6 +1,6 @@
-use program::Constant;
+use program::{Constant, TypeKind};
 
-use crate::{Register, VmContext, VmError};
+use crate::{Register, vm::VmContext, vm::VmError};
 
 pub type NativeFunc =
     fn(ctx: &mut VmContext<'_>, args: &[Register], ret: &mut [Register]) -> Result<(), VmError>;
@@ -19,6 +19,10 @@ pub fn get_native_functions() -> Vec<NativeFunctionWrapper> {
         NativeFunctionWrapper {
             name: "print_str",
             function: print_str,
+        },
+        NativeFunctionWrapper {
+            name: "print_any",
+            function: print_any,
         },
     ];
 
@@ -56,6 +60,53 @@ fn print_str(
         return Err(VmError {
             message: format!("expected string but found {:?}", constant),
         });
+    }
+
+    Ok(())
+}
+
+fn print_any(
+    ctx: &mut VmContext<'_>,
+    args: &[Register],
+    _: &mut [Register],
+)
+-> Result<(), VmError> {
+    if args.len() != 2 {
+        return Err(
+            VmError { message: format!("expected 2 registers as arguments") }
+        )
+    }
+
+    let type_info = ctx.types[args[0] as usize];
+
+    match type_info.kind {
+        TypeKind::I64 => {
+            let value = args[1] as i64;
+
+            println!("{}", value);
+        },
+
+        TypeKind::F64 => {
+            let value = f64::from_bits(args[1]);
+
+            println!("{}", value);
+        }
+
+        TypeKind::Bool => {
+            let value = if args[1] == 0 { "true"} else { "false" };
+
+            println!("{}", value)
+        }
+
+        TypeKind::String => {
+            let const_index = args[1] as usize;
+
+            if let Constant::String(string) = &ctx.constants[const_index] {
+                println!("{}", string);
+            } else {
+                return Err(VmError { message: format!("expected constant string but found {:?}", &ctx.constants[const_index]) })
+            }
+        }
     }
 
     Ok(())

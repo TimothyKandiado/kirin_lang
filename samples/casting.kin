@@ -1,15 +1,15 @@
 package main
 
-native fn print(arg: any): void
+native fn print_any(arg: any): void
 
 fn main(): void {
-    print("Casting in kirin" as any)
+    print_any("Casting in kirin" as any)
 
     x : f64 = 200.75
 
-    print(x as any)
+    print_any(x as any)
 
     y : i64 = x as i64
 
-    print(y as any)
+    print_any(y as any)
 }

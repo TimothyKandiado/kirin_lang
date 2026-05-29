@@ -341,15 +341,14 @@ impl<'a> Parser<'a> {
                     self.column = 0;
                     _ = self.advance();
                 }
-                '/'
-                    if self.peek_next() == '/' => {
-                        while !self.is_at_end() && self.peek() != '\n' {
-                            _ = self.advance();
-                        }
+                '/' if self.peek_next() == '/' => {
+                    while !self.is_at_end() && self.peek() != '\n' {
                         _ = self.advance();
-                        self.line += 1;
-                        self.column = 0;
                     }
+                    _ = self.advance();
+                    self.line += 1;
+                    self.column = 0;
+                }
 
                 _ => {
                     break;

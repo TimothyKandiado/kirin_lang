@@ -3,7 +3,7 @@ use compiler::{
     type_check::TypeChecker,
 };
 use program::{Constant, FunctionKind, Program};
-use runtime::{VM, native::get_native_functions};
+use runtime::{native::get_native_functions, vm::VM};
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();

@@ -24,8 +24,19 @@ pub enum OpCode {
     PowI64,
     NegI64,
 
+    AddF64,
+    SubF64,
+    MulF64,
+    DivF64,
+    ModF64,
+    PowF64,
+    NegF64,
+
     CmpLtI64,
     CmpLeI64,
+
+    CmpLtF64,
+    CmpLeF64,
 
     CmpEq,
 
@@ -71,8 +82,20 @@ impl OpCode {
             x if x == OpCode::PowI64 as u32 => OpCode::PowI64,
             x if x == OpCode::NegI64 as u32 => OpCode::NegI64,
 
+            x if x == OpCode::AddF64 as u32 => OpCode::AddF64,
+            x if x == OpCode::SubF64 as u32 => OpCode::SubF64,
+            x if x == OpCode::MulF64 as u32 => OpCode::MulF64,
+            x if x == OpCode::DivF64 as u32 => OpCode::DivF64,
+            x if x == OpCode::ModF64 as u32 => OpCode::ModF64,
+            x if x == OpCode::PowF64 as u32 => OpCode::PowF64,
+            x if x == OpCode::NegF64 as u32 => OpCode::NegF64,
+
             x if x == OpCode::CmpLtI64 as u32 => OpCode::CmpLtI64,
             x if x == OpCode::CmpLeI64 as u32 => OpCode::CmpLeI64,
+
+            x if x == OpCode::CmpLtF64 as u32 => OpCode::CmpLtF64,
+            x if x == OpCode::CmpLeF64 as u32 => OpCode::CmpLeF64,
+
             x if x == OpCode::CmpEq as u32 => OpCode::CmpEq,
 
             x if x == OpCode::Not as u32 => OpCode::Not,

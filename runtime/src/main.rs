@@ -1,5 +1,5 @@
 use program::{Constant, FunctionKind, Program};
-use runtime::{VM, native::get_native_functions};
+use runtime::{native::get_native_functions, vm::VM};
 
 fn main() {
     let program_data = std::fs::read("samples/hello.knb").unwrap();

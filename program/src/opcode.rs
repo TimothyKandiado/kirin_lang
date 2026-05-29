@@ -18,30 +18,40 @@ pub const OP_MOD_I64: u8 = 0x0D;
 pub const OP_POW_I64: u8 = 0x0E;
 pub const OP_NEG_I64: u8 = 0x0F;
 
-pub const OP_CMP_LT_I64: u8 = 0x10;
-pub const OP_CMP_LE_I64: u8 = 0x11;
+pub const OP_ADD_F64: u8 = 0x10;
+pub const OP_SUB_F64: u8 = 0x11;
+pub const OP_MUL_F64: u8 = 0x12;
+pub const OP_DIV_F64: u8 = 0x13;
+pub const OP_MOD_F64: u8 = 0x14;
+pub const OP_POW_F64: u8 = 0x15;
+pub const OP_NEG_F64: u8 = 0x16;
 
-pub const OP_CMP_EQ: u8 = 0x12;
+pub const OP_CMP_LT_I64: u8 = 0x17;
+pub const OP_CMP_LE_I64: u8 = 0x18;
 
-pub const OP_NOT: u8 = 0x13;
-pub const OP_AND: u8 = 0x14;
-pub const OP_OR: u8 = 0x15;
+pub const OP_CMP_LT_F64: u8 = 0x19;
+pub const OP_CMP_LE_F64: u8 = 0x1A;
 
-pub const OP_BR_FALSE: u8 = 0x16;
-pub const OP_JUMP: u8 = 0x17;
+pub const OP_CMP_EQ: u8 = 0x1B;
 
-pub const OP_BOX: u8 = 0x18;
-pub const OP_UNBOX: u8 = 0x19;
+pub const OP_NOT: u8 = 0x1C;
+pub const OP_AND: u8 = 0x1D;
+pub const OP_OR: u8 = 0x1E;
 
-pub const OP_F64_TO_I64: u8 = 0x1A;
-pub const OP_I64_TO_F64: u8 = 0x1B;
+pub const OP_BR_FALSE: u8 = 0x1F;
+pub const OP_JUMP: u8 = 0x20;
 
-pub const OP_CALL: u8 = 0x1C;      // direct call
-pub const OP_INVOKE: u8 = 0x1D;    // indirect call
-pub const OP_RET: u8 = 0x1E;
-pub const OP_RET_VOID: u8 = 0x1F;
-pub const OP_HALT: u8 = 0x20;
+pub const OP_BOX: u8 = 0x21;
+pub const OP_UNBOX: u8 = 0x22;
 
+pub const OP_F64_TO_I64: u8 = 0x23;
+pub const OP_I64_TO_F64: u8 = 0x24;
+
+pub const OP_CALL: u8 = 0x25; // direct call
+pub const OP_INVOKE: u8 = 0x26; // indirect call
+pub const OP_RET: u8 = 0x27;
+pub const OP_RET_VOID: u8 = 0x28;
+pub const OP_HALT: u8 = 0x29;
 
 pub fn opcode_name(op: u8) -> &'static str {
     match op {
@@ -65,8 +75,19 @@ pub fn opcode_name(op: u8) -> &'static str {
         OP_POW_I64 => "OP_POW_I64",
         OP_NEG_I64 => "OP_NEG_I64",
 
+        OP_ADD_F64 => "OP_ADD_F64",
+        OP_SUB_F64 => "OP_SUB_F64",
+        OP_MUL_F64 => "OP_MUL_F64",
+        OP_DIV_F64 => "OP_DIV_F64",
+        OP_MOD_F64 => "OP_MOD_F64",
+        OP_POW_F64 => "OP_POW_F64",
+        OP_NEG_F64 => "OP_NEG_F64",
+
         OP_CMP_LT_I64 => "OP_CMP_LT_I64",
         OP_CMP_LE_I64 => "OP_CMP_LE_I64",
+
+        OP_CMP_LT_F64 => "OP_CMP_LT_F64",
+        OP_CMP_LE_F64 => "OP_CMP_LE_F64",
 
         OP_CMP_EQ => "OP_CMP_EQ",
 

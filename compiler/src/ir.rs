@@ -76,7 +76,7 @@ pub enum IrInstruction<'a> {
 
     F64ToI64 {
         dest: Reg,
-        src: Reg
+        src: Reg,
     },
 
     I64ToF64 {
@@ -346,29 +346,43 @@ impl<'a> IrBuilder<'a> {
                 Some(dest)
             }
             Expression::Box(box_expr) => {
-                let src = self.lower_expression(&box_expr.value).expect("expected value to box");
+                let src = self
+                    .lower_expression(&box_expr.value)
+                    .expect("expected value to box");
                 let dest = self.allocate_register(ValueType::Any);
 
                 let registers = self.get_allocated_registers();
                 let val_type = registers[src].clone();
 
-                self.push_instruction(IrInstruction::Box { dest, src, val_type });
+                self.push_instruction(IrInstruction::Box {
+                    dest,
+                    src,
+                    val_type,
+                });
 
                 Some(dest)
-            },
+            }
             Expression::Unbox(unbox_expr) => {
-                let src = self.lower_expression(&unbox_expr.value).expect("expected value to unbox");
+                let src = self
+                    .lower_expression(&unbox_expr.value)
+                    .expect("expected value to unbox");
                 let dest = self.allocate_register(unbox_expr.value_type.clone());
 
-                self.push_instruction(IrInstruction::Unbox { dest, src, val_type: unbox_expr.value_type.clone() });
+                self.push_instruction(IrInstruction::Unbox {
+                    dest,
+                    src,
+                    val_type: unbox_expr.value_type.clone(),
+                });
 
                 Some(dest)
-            },
+            }
             Expression::Cast(cast_expr) => {
                 let source_type = &cast_expr.value.get_value_type();
                 let target_type = &cast_expr.value_type;
 
-                let src = self.lower_expression(&cast_expr.value).expect("expected a value to be cast");
+                let src = self
+                    .lower_expression(&cast_expr.value)
+                    .expect("expected a value to be cast");
 
                 if source_type == target_type {
                     return Some(src);
@@ -379,13 +393,13 @@ impl<'a> IrBuilder<'a> {
                 if source_type == &ValueType::F64 && target_type == &ValueType::I64 {
                     self.push_instruction(IrInstruction::F64ToI64 { dest, src });
                 } else if source_type == &ValueType::I64 && target_type == &ValueType::F64 {
-                    self.push_instruction(IrInstruction::I64ToF64 { dest, src } );
+                    self.push_instruction(IrInstruction::I64ToF64 { dest, src });
                 } else {
                     panic!("cannot cast from {} to {}", source_type, target_type)
                 }
 
                 Some(dest)
-            },
+            }
         }
     }
 
@@ -442,9 +456,9 @@ impl<'a> IrBuilder<'a> {
 
                         self.lower_statement(body);
 
-                        if let Some(last_instruction) = self.get_last_instruction() 
-                        && let IrInstruction::Return {val: _} = last_instruction  {
-                            
+                        if let Some(last_instruction) = self.get_last_instruction()
+                            && let IrInstruction::Return { val: _ } = last_instruction
+                        {
                         } else {
                             if return_type == &ValueType::Void {
                                 self.push_instruction(IrInstruction::Return { val: None });
@@ -551,7 +565,9 @@ impl<'a> IrBuilder<'a> {
                 if let Some(init) = &for_stmt.initializer {
                     let init_block = self.push_block();
                     self.lower_statement(init);
-                    self.push_instruction(IrInstruction::Jump { label: init_block + 1 });
+                    self.push_instruction(IrInstruction::Jump {
+                        label: init_block + 1,
+                    });
                 }
 
                 let mut condition_block_label = None;
@@ -563,27 +579,42 @@ impl<'a> IrBuilder<'a> {
                     let label = self.push_block();
                     condition_block_label = Some(label);
 
-                    let condition_reg = self.lower_expression(condition).expect("condition should return value");
+                    let condition_reg = self
+                        .lower_expression(condition)
+                        .expect("condition should return value");
                     cond_reg = Some(condition_reg);
 
-                    let (block_idx, inst_idx) = self.push_instruction(IrInstruction::Branch { cond: condition_reg, then_label: label + 1, else_label: 0 });
+                    let (block_idx, inst_idx) = self.push_instruction(IrInstruction::Branch {
+                        cond: condition_reg,
+                        then_label: label + 1,
+                        else_label: 0,
+                    });
                     (branch_block_idx, branch_inst_idx) = (Some(block_idx), Some(inst_idx))
                 }
 
                 let loop_body = self.push_block();
                 self.lower_statement(&for_stmt.body);
 
-                let (continue_block_idx, continue_inst_idx) = self.push_instruction(IrInstruction::Jump { label: 0 });
+                let (continue_block_idx, continue_inst_idx) =
+                    self.push_instruction(IrInstruction::Jump { label: 0 });
 
                 let footer_label = self.push_block();
                 if let Some(footer) = &for_stmt.footer {
                     self.lower_statement(footer);
                 }
 
-                self.edit_instruction(IrInstruction::Jump { label: footer_label }, continue_block_idx, continue_inst_idx);
-                
+                self.edit_instruction(
+                    IrInstruction::Jump {
+                        label: footer_label,
+                    },
+                    continue_block_idx,
+                    continue_inst_idx,
+                );
+
                 if let Some(condition_label) = condition_block_label {
-                    self.push_instruction(IrInstruction::Jump { label: condition_label });
+                    self.push_instruction(IrInstruction::Jump {
+                        label: condition_label,
+                    });
                 } else {
                     self.push_instruction(IrInstruction::Jump { label: loop_body });
                 }
@@ -592,11 +623,15 @@ impl<'a> IrBuilder<'a> {
 
                 if condition_block_label.is_some() {
                     self.edit_instruction(
-                        IrInstruction::Branch { cond: cond_reg.unwrap(), then_label: loop_body, else_label: break_label }, 
-                        branch_block_idx.unwrap(), 
-                        branch_inst_idx.unwrap());
+                        IrInstruction::Branch {
+                            cond: cond_reg.unwrap(),
+                            then_label: loop_body,
+                            else_label: break_label,
+                        },
+                        branch_block_idx.unwrap(),
+                        branch_inst_idx.unwrap(),
+                    );
                 }
-                
 
                 self.pop_scope();
             }
@@ -789,10 +824,7 @@ impl<'a> IrBuilder<'a> {
             panic!("cannot get an instruction in global scope")
         }
 
-        let function = self
-            .functions
-            .get(self.current_function.unwrap())
-            .unwrap();
+        let function = self.functions.get(self.current_function.unwrap()).unwrap();
 
         if let IrFunction::Bytecode {
             name: _,

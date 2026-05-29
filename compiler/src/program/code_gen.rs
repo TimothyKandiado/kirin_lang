@@ -640,64 +640,75 @@ impl ProgramBuilder {
                         ));
                     }
                 }
-                IrInstruction::Box { dest, src, val_type } => {
+                IrInstruction::Box {
+                    dest,
+                    src,
+                    val_type,
+                } => {
                     let type_size = val_type.get_size() as u8;
 
                     let type_index = match val_type {
-                        ValueType::Bool => self.push_type(TypeInfo { 
-                            kind: program::TypeKind::Bool, 
-                            size: type_size
+                        ValueType::Bool => self.push_type(TypeInfo {
+                            kind: program::TypeKind::Bool,
+                            size: type_size,
                         }),
 
                         ValueType::I64 => self.push_type(TypeInfo {
-                            kind: program::TypeKind::I64, 
-                            size: type_size
+                            kind: program::TypeKind::I64,
+                            size: type_size,
                         }),
 
                         ValueType::F64 => self.push_type(TypeInfo {
-                            kind: program::TypeKind::F64, 
-                            size: type_size
+                            kind: program::TypeKind::F64,
+                            size: type_size,
                         }),
 
                         ValueType::String => self.push_type(TypeInfo {
-                            kind: program::TypeKind::String, 
-                            size: type_size
+                            kind: program::TypeKind::String,
+                            size: type_size,
                         }),
 
                         _ => {
                             panic!("can not box a value of type {:?}", val_type);
                         }
                     };
+
+                    let dest = reg_allocations[*dest].offset as u32;
+                    let src = reg_allocations[*src].offset as u32;
 
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::Box,
-                        *dest as u32,
-                        *src as u32,
+                        dest as u32,
+                        src as u32,
                         type_index as u32,
                     ));
-                },
-                IrInstruction::Unbox { dest, src, val_type } => {
+                }
+                IrInstruction::Unbox {
+                    dest,
+                    src,
+                    val_type,
+                } => {
                     let type_size = val_type.get_size() as u8;
 
                     let type_index = match val_type {
-                        ValueType::Bool => self.push_type(TypeInfo { 
-                            kind: program::TypeKind::Bool, 
-                            size: type_size
+                        ValueType::Bool => self.push_type(TypeInfo {
+                            kind: program::TypeKind::Bool,
+                            size: type_size,
                         }),
 
                         ValueType::I64 => self.push_type(TypeInfo {
-                            kind: program::TypeKind::I64, 
-                            size: type_size
+                            kind: program::TypeKind::I64,
+                            size: type_size,
                         }),
 
                         ValueType::F64 => self.push_type(TypeInfo {
-                            kind: program::TypeKind::F64, 
-                            size: type_size
+                            kind: program::TypeKind::F64,
+                            size: type_size,
                         }),
 
                         ValueType::String => self.push_type(TypeInfo {
-                            kind: program::TypeKind::String, 
-                            size: type_size
+                            kind: program::TypeKind::String,
+                            size: type_size,
                         }),
 
                         _ => {
@@ -705,29 +716,38 @@ impl ProgramBuilder {
                         }
                     };
 
+                    let dest = reg_allocations[*dest].offset as u32;
+                    let src = reg_allocations[*src].offset as u32;
+
                     self.instructions.push(InstructionBuilder::new_format_b(
                         OpCode::Unbox,
-                        *dest as u32,
-                        *src as u32,
+                        dest as u32,
+                        src as u32,
                         type_index as u32,
                     ));
-                },
+                }
                 IrInstruction::F64ToI64 { dest, src } => {
+                    let dest = reg_allocations[*dest].offset as u32;
+                    let src = reg_allocations[*src].offset as u32;
+
                     self.instructions.push(InstructionBuilder::new_format_b(
-                        OpCode::F64ToI64, 
-                        *dest as u32, 
-                        *src as u32, 
-                        0
+                        OpCode::F64ToI64,
+                        dest as u32,
+                        src as u32,
+                        0,
                     ));
-                },
+                }
                 IrInstruction::I64ToF64 { dest, src } => {
+                    let dest = reg_allocations[*dest].offset as u32;
+                    let src = reg_allocations[*src].offset as u32;
+
                     self.instructions.push(InstructionBuilder::new_format_b(
-                        OpCode::I64ToF64, 
-                        *dest as u32, 
-                        *src as u32, 
-                        0
+                        OpCode::I64ToF64,
+                        dest as u32,
+                        src as u32,
+                        0,
                     ));
-                },
+                }
             }
         }
 

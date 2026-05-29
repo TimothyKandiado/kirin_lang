@@ -194,11 +194,11 @@ impl RegisterAllocator {
         for v in values.iter() {
             if let Some(last) = grouped_values.last_mut()
                 && let (Some(last_group), Some(current_group)) = (last[0].group_id, v.group_id)
-                    && last_group == current_group
-                {
-                    last.push(v);
-                    continue;
-                }
+                && last_group == current_group
+            {
+                last.push(v);
+                continue;
+            }
 
             grouped_values.push(vec![v]);
         }
@@ -336,26 +336,34 @@ impl RegisterAllocator {
                         }
                     }
                     IrInstruction::Jump { label: _ } => {}
-                    IrInstruction::Box { dest, src, val_type: _ } => {
+                    IrInstruction::Box {
+                        dest,
+                        src,
+                        val_type: _,
+                    } => {
                         virtual_registers[*dest].set_coord(ir_coord);
 
                         virtual_registers[*src].set_coord(ir_coord);
-                    },
-                    IrInstruction::Unbox { dest, src, val_type: _ } => {
+                    }
+                    IrInstruction::Unbox {
+                        dest,
+                        src,
+                        val_type: _,
+                    } => {
                         virtual_registers[*dest].set_coord(ir_coord);
 
                         virtual_registers[*src].set_coord(ir_coord);
-                    },
+                    }
                     IrInstruction::F64ToI64 { dest, src } => {
                         virtual_registers[*dest].set_coord(ir_coord);
 
                         virtual_registers[*src].set_coord(ir_coord);
-                    },
+                    }
                     IrInstruction::I64ToF64 { dest, src } => {
                         virtual_registers[*dest].set_coord(ir_coord);
 
                         virtual_registers[*src].set_coord(ir_coord);
-                    },
+                    }
                 }
             }
         }

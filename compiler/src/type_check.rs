@@ -169,12 +169,12 @@ impl<'a> TypeChecker<'a> {
                     let cond_ty = self.check_expression(cond);
 
                     if cond_ty != ValueType::Bool {
-                    self.error(
-                        for_stmt.line,
-                        for_stmt.column,
-                        format!("if condition must be bool, got {}", format_type(&cond_ty)),
-                    );
-                }
+                        self.error(
+                            for_stmt.line,
+                            for_stmt.column,
+                            format!("if condition must be bool, got {}", format_type(&cond_ty)),
+                        );
+                    }
                 }
                 if let Some(foot) = &mut for_stmt.footer {
                     self.check_statement(foot);
@@ -259,7 +259,6 @@ impl<'a> TypeChecker<'a> {
 
                 self.check_annotation(literal.line, literal.column, &literal.value_type, &inferred);
 
-            
                 inferred
             }
 
@@ -334,18 +333,16 @@ impl<'a> TypeChecker<'a> {
             Expression::Call(call) => {
                 let call = call.as_mut();
                 self.check_call(call)
-            },
+            }
 
-            Expression::Box(_) => {
-                ValueType::Any
-            },
+            Expression::Box(_) => ValueType::Any,
 
             Expression::Unbox(unbox_expr) => {
                 let inner = self.check_expression(&mut unbox_expr.value);
 
                 self.check_annotation(unbox_expr.line, unbox_expr.column, &inner, &ValueType::Any);
                 unbox_expr.value_type.clone()
-            },
+            }
             Expression::Cast(cast_expr) => {
                 let source_type = self.check_expression(&mut cast_expr.value);
                 let target_type = cast_expr.value_type.clone();
@@ -362,10 +359,14 @@ impl<'a> TypeChecker<'a> {
                     return target_type;
                 }
 
-                self.error(cast_expr.line, cast_expr.column, format!("cannot cast from {} to {}", source_type, target_type));
+                self.error(
+                    cast_expr.line,
+                    cast_expr.column,
+                    format!("cannot cast from {} to {}", source_type, target_type),
+                );
 
                 ValueType::Undefined
-            },
+            }
         }
     }
 

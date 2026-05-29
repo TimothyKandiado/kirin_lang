@@ -14,7 +14,7 @@ pub enum Expression<'a> {
     Variable(VariableExpr<'a>),
     Box(Box<BoxExpr<'a>>),
     Unbox(Box<UnboxExpr<'a>>),
-    Cast(Box<CastExpr<'a>>)
+    Cast(Box<CastExpr<'a>>),
 }
 
 impl Expression<'_> {
@@ -30,7 +30,7 @@ impl Expression<'_> {
             Self::None => ValueType::Undefined,
             Self::Box(_) => ValueType::Any,
             Self::Unbox(unbox) => unbox.value_type.clone(),
-            Self::Cast(cast) => cast.value_type.clone()
+            Self::Cast(cast) => cast.value_type.clone(),
         }
     }
 }
@@ -518,7 +518,7 @@ impl<'a> Parser<'a> {
             "expect ':' after variable name".to_string(),
         )?;
 
-        let var_type = self.parse_type().unwrap_or_else(|_|{ ValueType::Undefined });
+        let var_type = self.parse_type().unwrap_or_else(|_| ValueType::Undefined);
 
         let mut value = None;
 
@@ -530,7 +530,7 @@ impl<'a> Parser<'a> {
         //     TokenKind::NewLine,
         //     "expected new line after var declaration".to_string(),
         // )?;
-        
+
         self.skip(TokenKind::NewLine);
 
         let var_decl = VarDeclStmt {
@@ -669,13 +669,19 @@ impl<'a> Parser<'a> {
             initializer = Some(self.declaration()?);
         }
 
-        self.consume(TokenKind::Semicolon, "expected ';' after initializer".to_string())?;
-        
+        self.consume(
+            TokenKind::Semicolon,
+            "expected ';' after initializer".to_string(),
+        )?;
+
         if !self.check(TokenKind::Semicolon) {
             condition = Some(self.expression()?);
         }
 
-        self.consume(TokenKind::Semicolon, "expected ';' after condition".to_string())?;
+        self.consume(
+            TokenKind::Semicolon,
+            "expected ';' after condition".to_string(),
+        )?;
 
         if !self.check(TokenKind::BraceLeft) {
             footer = Some(self.statement()?);
@@ -693,7 +699,6 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Statement::For(Box::new(for_stmt)))
-
     }
 
     fn block_stmt(&mut self) -> Result<Statement<'a>, ParseError> {
@@ -995,14 +1000,14 @@ impl<'a> Parser<'a> {
 
             match target_type {
                 ValueType::Any => {
-                    let box_expr = BoxExpr{
+                    let box_expr = BoxExpr {
                         column: prev.column,
                         line: prev.line,
                         value: expr,
-                        value_type: ValueType::Any
+                        value_type: ValueType::Any,
                     };
 
-                    return Ok(Expression::Box(Box::new(box_expr)))
+                    return Ok(Expression::Box(Box::new(box_expr)));
                 }
 
                 _ => {
@@ -1010,10 +1015,10 @@ impl<'a> Parser<'a> {
                         column: prev.column,
                         line: prev.line,
                         value: expr,
-                        value_type: target_type
+                        value_type: target_type,
                     };
 
-                    return Ok(Expression::Cast(Box::new(cast_expr)))
+                    return Ok(Expression::Cast(Box::new(cast_expr)));
                 }
             }
         }

@@ -44,8 +44,6 @@ fn main() {
 
     let mut ast = ast_result.unwrap();
 
-    
-
     let type_checker = TypeChecker::new();
 
     let errors = type_checker.check_module(&mut ast);
@@ -79,7 +77,6 @@ fn main() {
     let mut output = std::fs::File::create(outfile).unwrap();
     program.write_bytes(&mut output);
 }
-
 
 fn print_help() {
     println!("kirinc");
