@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use crate::parser::{
-    BinaryExpr, BinaryExprOp, CallExpr, Expression, FunctionDeclStmt, FunctionSignature,
-    LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType, format_binary_op, format_type,
+    BinaryExpr, BinaryExprOp, BoxExpr, CallExpr, CastExpr, Expression, FunctionDeclStmt, FunctionSignature, LiteralValue, Statement, UnaryExpr, UnaryExprOp, ValueType, format_binary_op, format_type
 };
 
 struct SymbolTable<'a> {
@@ -223,6 +222,13 @@ impl<'a> TypeChecker<'a> {
 
                 if let Some(init) = &mut decl.value {
                     let init_ty = self.check_expression(init);
+                    if &decl.value_type == &ValueType::Undefined {
+                        decl.value_type = init_ty.clone();
+                    }
+
+                    try_auto_cast(init, &decl.value_type);
+                    let init_ty = init.get_value_type();
+
                     if let (Ok(()), Ok(())) =
                         (require_defined(&decl.value_type), require_defined(&init_ty))
                         && !types_compatible(&decl.value_type, &init_ty)
@@ -303,14 +309,20 @@ impl<'a> TypeChecker<'a> {
 
                 match self.symbols.lookup(assign.name) {
                     Some(var_ty) => {
+                        let line = assign.line;
+                        let column = assign.column;
+                        let name = assign.name;
+
+                        try_auto_cast(expression, &var_ty);
+
                         if !types_compatible(&var_ty, &rhs_ty) {
                             self.error(
-                                assign.line,
-                                assign.column,
+                                line,
+                                column,
                                 format!(
                                     "cannot assign {} to variable '{}' of type {}",
                                     format_type(&rhs_ty),
-                                    assign.name,
+                                    name,
                                     format_type(&var_ty)
                                 ),
                             );
@@ -348,6 +360,7 @@ impl<'a> TypeChecker<'a> {
                 self.check_annotation(unbox_expr.line, unbox_expr.column, &inner, &ValueType::Any);
                 unbox_expr.value_type.clone()
             }
+
             Expression::Cast(cast_expr) => {
                 let source_type = self.check_expression(&mut cast_expr.value);
                 let target_type = cast_expr.value_type.clone();
@@ -378,6 +391,14 @@ impl<'a> TypeChecker<'a> {
     fn check_binary(&mut self, bin: &mut BinaryExpr<'a>) -> ValueType {
         let lhs_ty = self.check_expression(&mut bin.left);
         let rhs_ty = self.check_expression(&mut bin.right);
+
+        let target_type = if &lhs_ty > &rhs_ty { &lhs_ty } else { &rhs_ty };
+
+        try_auto_cast(&mut bin.left, target_type);
+        try_auto_cast(&mut bin.right, target_type);
+
+        let lhs_ty = bin.left.get_value_type();
+        let rhs_ty = bin.right.get_value_type();
 
         // Skip further checks if either side failed to resolve.
         if lhs_ty == ValueType::Undefined || rhs_ty == ValueType::Undefined {
@@ -574,15 +595,14 @@ impl<'a> TypeChecker<'a> {
         let callee = self.check_expression(&mut call.callee);
 
         // Check argument expressions regardless.
-        let arg_types: Vec<ValueType> = call
+        call
             .arguments
             .iter_mut()
-            .map(|a| self.check_expression(a))
-            .collect();
+            .for_each(|a| {self.check_expression(a);});
 
         let return_ty = match callee {
             ValueType::Fn(sig) => {
-                if arg_types.len() != sig.parameters.len() {
+                if call.arguments.len() != sig.parameters.len() {
                     self.error(
                         call.line,
                         call.column,
@@ -590,14 +610,17 @@ impl<'a> TypeChecker<'a> {
                             "function '{}' expects {} argument(s), got {}",
                             func_name.unwrap(),
                             sig.parameters.len(),
-                            arg_types.len()
+                            call.arguments.len()
                         ),
                     );
                 } else {
                     // Per-argument type check.
-                    for (i, (expected, actual)) in
-                        sig.parameters.iter().zip(arg_types.iter()).enumerate()
+                    for (i, (expected, expr)) in
+                        sig.parameters.iter().zip(call.arguments.iter_mut()).enumerate()
                     {
+                        try_auto_cast(expr, expected);
+                        let actual = &expr.get_value_type();
+
                         if !types_compatible(expected, actual) {
                             self.error(
                                 call.line,
@@ -638,9 +661,10 @@ impl<'a> TypeChecker<'a> {
         annotated: &ValueType,
         inferred: &ValueType,
     ) {
-        if matches!(annotated, ValueType::Undefined | ValueType::Any) {
+        if matches!(annotated, ValueType::Undefined) {
             return;
         }
+
         if inferred == &ValueType::Undefined {
             return; // error already recorded upstream
         }
@@ -664,9 +688,42 @@ fn is_numeric(ty: &ValueType) -> bool {
     matches!(ty, ValueType::I64 | ValueType::F64)
 }
 
+fn try_auto_cast(expression: &mut Expression, target_type: &ValueType) {
+    let source_type = expression.get_value_type();
+
+    if types_compatible(&source_type, target_type) {
+        return;
+    }
+
+    
+    if target_type == &ValueType::Any {
+        let boxed_expr = Expression::Box(Box::new(BoxExpr {
+            line: expression.get_line(),
+            column: expression.get_column(),
+            value: expression.clone(),
+            value_type: ValueType::Any
+        }));
+
+        *expression = boxed_expr
+    }
+
+    if source_type == ValueType::F64 && target_type == &ValueType::I64 ||
+       source_type == ValueType::I64 && target_type == &ValueType::F64 {
+        let cast_expr = Expression::Cast(Box::new(CastExpr {
+            line: expression.get_line(),
+            column: expression.get_column(),
+            value: expression.clone(),
+            value_type: target_type.clone()
+        }));
+
+        *expression = cast_expr
+    }
+
+}
+
 /// `Any` is a wildcard that satisfies any type (for native function interop).
 fn types_compatible(expected: &ValueType, actual: &ValueType) -> bool {
-    expected == actual || expected == &ValueType::Any || actual == &ValueType::Any
+    expected == actual
 }
 
 fn require_defined(ty: &ValueType) -> Result<(), String> {

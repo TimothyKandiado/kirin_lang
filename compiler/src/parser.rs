@@ -33,6 +33,38 @@ impl Expression<'_> {
             Self::Cast(cast) => cast.value_type.clone(),
         }
     }
+
+    pub fn get_line(&self) -> usize {
+        match self {
+            Expression::None => 0,
+            Expression::Binary(binary_expr) => binary_expr.line,
+            Expression::Unary(unary_expr) => unary_expr.line,
+            Expression::Literal(literal_expr) => literal_expr.line,
+            Expression::Grouping(grouping_expr) => grouping_expr.line,
+            Expression::Call(call_expr) => call_expr.line,
+            Expression::Assign(assign_expr) => assign_expr.line,
+            Expression::Variable(variable_expr) => variable_expr.line,
+            Expression::Box(box_expr) => box_expr.line,
+            Expression::Unbox(unbox_expr) => unbox_expr.line,
+            Expression::Cast(cast_expr) => cast_expr.line,
+        }
+    }
+
+    pub fn get_column(&self) -> usize {
+        match self {
+            Expression::None => 0,
+            Expression::Binary(binary_expr) => binary_expr.column,
+            Expression::Unary(unary_expr) => unary_expr.column,
+            Expression::Literal(literal_expr) => literal_expr.column,
+            Expression::Grouping(grouping_expr) => grouping_expr.column,
+            Expression::Call(call_expr) => call_expr.column,
+            Expression::Assign(assign_expr) => assign_expr.column,
+            Expression::Variable(variable_expr) => variable_expr.column,
+            Expression::Box(box_expr) => box_expr.column,
+            Expression::Unbox(unbox_expr) => unbox_expr.column,
+            Expression::Cast(cast_expr) => cast_expr.column,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -185,13 +217,13 @@ pub enum LiteralValue<'a> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum ValueType {
     Undefined,
+    Void,
+    Bool,
     I64,
     F64,
     String,
-    Bool,
-    Void,
-    Any,
     Fn(Box<FunctionSignature>),
+    Any,
 }
 
 impl ValueType {
