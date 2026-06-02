@@ -800,9 +800,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_type(&mut self) -> Result<ValueType, ParseError> {
-        let token = self.advance();
+        let token = self.peek();
 
-        match token.kind {
+        let result = match token.kind {
             TokenKind::I64 => Ok(ValueType::I64),
             TokenKind::F64 => Ok(ValueType::F64),
             TokenKind::Bool => Ok(ValueType::Bool),
@@ -815,7 +815,13 @@ impl<'a> Parser<'a> {
                 column: token.column,
                 context: format!("'{:?}' is not a valid type", token.kind),
             }),
+        };
+
+        if result.is_ok() {
+            self.advance();
         }
+
+        result
     }
 
     fn expression(&mut self) -> Result<Expression<'a>, ParseError> {

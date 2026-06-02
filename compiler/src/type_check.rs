@@ -215,13 +215,9 @@ impl<'a> TypeChecker<'a> {
             }
 
             Statement::VarDecl(decl) => {
-                // The declared type must be concrete.
-                if let Err(msg) = require_defined(&decl.value_type) {
-                    self.error(decl.line, decl.column, msg);
-                }
-
                 if let Some(init) = &mut decl.value {
                     let init_ty = self.check_expression(init);
+                    
                     if &decl.value_type == &ValueType::Undefined {
                         decl.value_type = init_ty.clone();
                     }
@@ -244,6 +240,11 @@ impl<'a> TypeChecker<'a> {
                             ),
                         );
                     }
+                }
+
+                // The declared type must be concrete.
+                if let Err(msg) = require_defined(&decl.value_type) {
+                    self.error(decl.line, decl.column, msg);
                 }
 
                 self.symbols.declare(decl.name, decl.value_type.clone());

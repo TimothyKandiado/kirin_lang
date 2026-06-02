@@ -5,11 +5,11 @@ native fn print_any(arg: any): void
 fn main(): void {
     print_any("casting in kirin")
 
-    x : f64 = 200.75
+    x := 200.75
 
     print_any(square(x))
 
-    y : i64 = x
+    y := x as i64
 
     print_any(y)
 
