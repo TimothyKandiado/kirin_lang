@@ -4,6 +4,7 @@ mod instruction;
 pub mod opcode;
 
 use std::error::Error;
+use std::fmt::Display;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Write;
@@ -28,6 +29,13 @@ pub enum Constant {
 const CONST_I64_DISCRIMINANT: u8 = 0;
 const CONST_F64_DISCRIMINANT: u8 = 1;
 const CONST_STRING_DISCRIMINANT: u8 = 2;
+
+const TYPE_BOOL_DISCRIMINANT: u8 = 0;
+const TYPE_I64_DISCRIMINANT: u8 = 1;
+const TYPE_F64_DISCRIMINANT: u8 = 2;
+const TYPE_STRING_DISCRIMINANT: u8 = 3;
+const TYPE_ARRAY_DISCRIMINANT: u8 = 4;
+const TYPE_SLICE_DISCRIMINANT: u8 = 5;
 
 impl Constant {
     pub fn discriminant(&self) -> u8 {
@@ -107,18 +115,47 @@ impl FunctionMetadata {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(u8)]
 pub enum TypeKind {
+    Bool,
     I64,
     F64,
-    Bool,
     String,
+    Array { type_id: u16, length: usize },
+    Slice { type_id: u16 }
+}
+
+impl TypeKind {
+    pub fn determinant(&self) -> u8 {
+        match self {
+            Self::Bool => TYPE_BOOL_DISCRIMINANT,
+            Self::I64 => TYPE_I64_DISCRIMINANT,
+            Self::F64 => TYPE_F64_DISCRIMINANT,
+            Self::String => TYPE_STRING_DISCRIMINANT,
+            Self::Array { type_id: _, length: _ } => TYPE_ARRAY_DISCRIMINANT,
+            Self::Slice { type_id: _ } => TYPE_SLICE_DISCRIMINANT
+        }
+    }
+}
+
+impl Display for TypeKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let value = match self {
+            TypeKind::Bool => "bool".to_string(),
+            TypeKind::I64 => "i64".to_string(),
+            TypeKind::F64 => "f64".to_string(),
+            TypeKind::String => "str".to_string(),
+            TypeKind::Array {type_id:_, length} => format!("array[{}]", length),
+            TypeKind::Slice {type_id: _} => format!("slice[]"),
+        };
+
+        write!(f, "{}", value)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct TypeInfo {
     pub kind: TypeKind,
-    pub size: u8,
+    pub reg_size: u8,
 }
 
 const PROGRAM_HEADER_SIZE: usize = 30;
@@ -291,8 +328,20 @@ impl Program {
 
         // types
         for type_info in self.types.iter() {
-            buffer.write_u8(type_info.kind as u8).unwrap();
-            buffer.write_u8(type_info.size).unwrap();
+            buffer.write_u8(type_info.kind.determinant()).unwrap();
+            buffer.write_u8(type_info.reg_size).unwrap();
+
+            match type_info.kind {
+                TypeKind::Array { type_id, length } => {
+                    buffer.write_u16::<LittleEndian>(type_id).unwrap();
+                    buffer.write_u64::<LittleEndian>(length as u64).unwrap();
+                },
+                TypeKind::Slice { type_id } => {
+                    buffer.write_u16::<LittleEndian>(type_id).unwrap();
+                },
+
+                _ => {}
+            }
         }
     }
 
@@ -355,18 +404,30 @@ impl Program {
 
         for _ in 0..header.type_count {
             let kind = source.read_u8()?;
-            let size = source.read_u8()?;
+            let reg_size = source.read_u8()?;
 
             let kind = match kind {
-                x if x == TypeKind::Bool as u8 => TypeKind::Bool,
-                x if x == TypeKind::I64 as u8 => TypeKind::I64,
-                x if x == TypeKind::F64 as u8 => TypeKind::F64,
-                x if x == TypeKind::String as u8 => TypeKind::String,
+                x if x == TYPE_BOOL_DISCRIMINANT => TypeKind::Bool,
+                x if x == TYPE_I64_DISCRIMINANT => TypeKind::I64,
+                x if x == TYPE_F64_DISCRIMINANT => TypeKind::F64,
+                x if x == TYPE_STRING_DISCRIMINANT => TypeKind::String,
+
+                x if x == TYPE_ARRAY_DISCRIMINANT => {
+                    let type_id = source.read_u16::<LittleEndian>()?;
+                    let length = source.read_u64::<LittleEndian>()?;
+
+                    TypeKind::Array { type_id, length: length as usize }
+                },
+                x if x == TYPE_SLICE_DISCRIMINANT => {
+                    let type_id = source.read_u16::<LittleEndian>()?;
+
+                    TypeKind::Slice { type_id }
+                },
 
                 _ => return Err(format!("{} is not a valid type kind", kind).into()),
             };
 
-            let type_info = TypeInfo { kind, size };
+            let type_info = TypeInfo { kind, reg_size };
             program.types.push(type_info);
         }
 

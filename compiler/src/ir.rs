@@ -217,14 +217,11 @@ impl<'a> IrBuilder<'a> {
                     .lower_expression(&assign.value)
                     .expect("assignment expression must yield a value");
 
-                let local = self.get_local(assign.name);
-                if let Some(local) = local {
-                    self.push_instruction(IrInstruction::Copy {
-                        dest: local,
+                let target = self.lower_expression(&assign.target).expect("assignment target must yield a value");
+                self.push_instruction(IrInstruction::Copy {
+                        dest: target,
                         source: value,
                     });
-                }
-
                 None
             }
 

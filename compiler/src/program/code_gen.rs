@@ -61,9 +61,9 @@ impl ProgramBuilder {
                         registers: 0,
                         parameters: params
                             .iter()
-                            .map(|p| p.value_type.get_size())
+                            .map(|p| p.value_type.get_register_size())
                             .sum::<usize>() as u8,
-                        return_args: ret_type.get_size() as u8,
+                        return_args: ret_type.get_register_size() as u8,
                     };
 
                     self.functions.push(func_metadata);
@@ -84,9 +84,9 @@ impl ProgramBuilder {
                         registers: 0,
                         parameters: params
                             .iter()
-                            .map(|p| p.value_type.get_size())
+                            .map(|p| p.value_type.get_register_size())
                             .sum::<usize>() as u8,
-                        return_args: ret_type.get_size() as u8,
+                        return_args: ret_type.get_register_size() as u8,
                     };
 
                     self.functions.push(func_metadata);
@@ -754,27 +754,27 @@ impl ProgramBuilder {
                     src,
                     val_type,
                 } => {
-                    let type_size = val_type.get_size() as u8;
+                    let type_size = val_type.get_register_size() as u8;
 
                     let type_index = match val_type {
                         ValueType::Bool => self.push_type(TypeInfo {
                             kind: program::TypeKind::Bool,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::I64 => self.push_type(TypeInfo {
                             kind: program::TypeKind::I64,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::F64 => self.push_type(TypeInfo {
                             kind: program::TypeKind::F64,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::String => self.push_type(TypeInfo {
                             kind: program::TypeKind::String,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         _ => {
@@ -797,27 +797,27 @@ impl ProgramBuilder {
                     src,
                     val_type,
                 } => {
-                    let type_size = val_type.get_size() as u8;
+                    let type_size = val_type.get_register_size() as u8;
 
                     let type_index = match val_type {
                         ValueType::Bool => self.push_type(TypeInfo {
                             kind: program::TypeKind::Bool,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::I64 => self.push_type(TypeInfo {
                             kind: program::TypeKind::I64,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::F64 => self.push_type(TypeInfo {
                             kind: program::TypeKind::F64,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         ValueType::String => self.push_type(TypeInfo {
                             kind: program::TypeKind::String,
-                            size: type_size,
+                            reg_size: type_size,
                         }),
 
                         _ => {

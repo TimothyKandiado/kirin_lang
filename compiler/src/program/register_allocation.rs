@@ -240,7 +240,7 @@ impl RegisterAllocator {
         let mut virtual_registers: Vec<VirtualRegister> = reg_types
             .iter()
             .enumerate()
-            .map(|(idx, reg_type)| VirtualRegister::new(idx, reg_type.get_size()))
+            .map(|(idx, reg_type)| VirtualRegister::new(idx, reg_type.get_register_size()))
             .collect();
 
         let mut current_group_id: usize = 0;

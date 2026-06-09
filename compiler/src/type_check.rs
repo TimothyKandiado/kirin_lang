@@ -308,35 +308,47 @@ impl<'a> TypeChecker<'a> {
             Expression::Assign(assign) => {
                 let rhs_ty = self.check_expression(&mut assign.value);
 
-                match self.symbols.lookup(assign.name) {
-                    Some(var_ty) => {
-                        let line = assign.line;
-                        let column = assign.column;
-                        let name = assign.name;
+                match &assign.target {
+                    Expression::Variable(var) => {
+                        match self.symbols.lookup(var.name) {
+                            Some(var_ty) => {
+                                let line = var.line;
+                                let column = var.column;
+                                let name = var.name;
 
-                        try_auto_cast(expression, &var_ty);
+                                try_auto_cast(expression, &var_ty);
 
-                        if !types_compatible(&var_ty, &rhs_ty) {
-                            self.error(
-                                line,
-                                column,
-                                format!(
-                                    "cannot assign {} to variable '{}' of type {}",
-                                    format_type(&rhs_ty),
-                                    name,
-                                    format_type(&var_ty)
-                                ),
-                            );
+                                if !types_compatible(&var_ty, &rhs_ty) {
+                                    self.error(
+                                        line,
+                                        column,
+                                        format!(
+                                            "cannot assign {} to variable '{}' of type {}",
+                                            format_type(&rhs_ty),
+                                            name,
+                                            format_type(&var_ty)
+                                        ),
+                                    );
+                                }
+                            }
+                            None => {
+                                self.error(
+                                    assign.line,
+                                    assign.column,
+                                    format!("assignment to undefined variable '{}'", var.name),
+                                );
+                            }
                         }
                     }
-                    None => {
+
+                    _ => {
                         self.error(
-                            assign.line,
-                            assign.column,
-                            format!("assignment to undefined variable '{}'", assign.name),
-                        );
+                                    assign.line,
+                                    assign.column,
+                                    format!("invalid assignment target '{}'", assign.target.get_value_type()),
+                                );
                     }
-                }
+                };
                 ValueType::Void
             }
 

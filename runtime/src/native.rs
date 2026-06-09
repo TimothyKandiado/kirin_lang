@@ -111,6 +111,16 @@ fn print_any(
                 });
             }
         }
+
+        TypeKind::Array { type_id, length } => {
+            let type_info = ctx.types[type_id as usize];
+            println!("[{}]{}", length, type_info.kind)
+        }
+
+        TypeKind::Slice { type_id } => {
+            let type_info = ctx.types[type_id as usize];
+            println!("[]{}", type_info.kind)
+        }
     }
 
     Ok(())

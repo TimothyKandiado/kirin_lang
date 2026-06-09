@@ -152,7 +152,7 @@ pub struct CallExpr<'a> {
 
 #[derive(Debug, Clone)]
 pub struct AssignExpr<'a> {
-    pub name: &'a str,
+    pub target: Expression<'a>,
     pub value: Expression<'a>,
     pub line: usize,
     pub column: usize,
@@ -206,6 +206,15 @@ pub struct VariableExpr<'a> {
     pub value_type: ValueType,
 }
 
+#[derive(Debug, Clone)]
+pub struct IndexExpr<'a> {
+    pub line: usize,
+    pub column: usize,
+    pub value: Expression<'a>,
+    pub index: usize,
+    pub value_type: ValueType
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum LiteralValue<'a> {
     I64(i64),
@@ -223,6 +232,8 @@ pub enum ValueType {
     F64,
     String,
     Fn(Box<FunctionSignature>),
+    Array(Box<ValueType>, usize),
+    Slice(Box<ValueType>),
     Any,
 }
 
@@ -242,6 +253,12 @@ impl fmt::Display for ValueType {
             ValueType::Void => "void".to_string(),
             ValueType::Any => "any".to_string(),
             ValueType::Undefined => "undefined".to_string(),
+            ValueType::Array(value_kind, length ) => {
+                format!("[{}]{}", length, value_kind.to_string())
+            },
+            ValueType::Slice(value_kind) => {
+                format!("[]{}", value_kind.to_string())
+            }
             ValueType::Fn(func_sign) => {
                 let mut params = Vec::new();
                 for param in &func_sign.parameters {
@@ -836,11 +853,11 @@ impl<'a> Parser<'a> {
             let value = self.assignment()?;
 
             match expr {
-                Expression::Variable(var) => {
+                Expression::Variable(_) => {
                     let assign_expr = AssignExpr {
                         line: prev.line,
                         column: prev.column,
-                        name: var.name,
+                        target: expr,
                         value,
                     };
 
